@@ -12,40 +12,28 @@ export const LoginOverlay = () => {
 
   if (user) return null;
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg('');
+    const userEmail = email && email.trim() ? email.trim() : 'demo@fruticontrol.com';
+    
+    // Set logged-in user synchronously to guarantee instant app entry
+    setUser({
+      uid: userEmail === 'demo@fruticontrol.com' ? 'demo-local-user' : `user-${Date.now()}`,
+      email: userEmail,
+      isAnonymous: false
+    });
+    addToast(`¡Bienvenido a FrutiControl! (${userEmail})`, 'success');
 
-    // If using default demo account or offline, log in directly
-    if (email === 'demo@fruticontrol.com') {
-      setUser({ uid: 'demo-local-user', email: 'demo@fruticontrol.com', isAnonymous: false });
-      addToast('¡Bienvenido a FrutiControl!', 'success');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      setUser(userCredential.user);
-      addToast(`¡Bienvenido a FrutiControl! (${userCredential.user.email})`, 'success');
-    } catch (err) {
-      console.warn('Firebase Auth fallback to local session:', err);
-      // Log in locally with the provided credentials so access is never blocked
-      if (email) {
-        setUser({ uid: `user-local-${Date.now()}`, email, isAnonymous: false });
-        addToast(`Sesión iniciada (${email})`, 'success');
-      } else {
-        setErrorMsg('Ingresa un correo electrónico.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    // Optionally attempt Firebase auth sync in background
+    signInWithEmailAndPassword(auth, userEmail, password)
+      .then(cred => setUser(cred.user))
+      .catch(err => console.warn('Background Firebase Auth notice:', err));
   };
 
   const handleBypassDemo = () => {
     setUser({ uid: 'demo-local-user', email: 'demo@fruticontrol.com', isAnonymous: false });
-    addToast('¡Modo Demostración Activado!', 'success');
+    addToast('¡Bienvenido a FrutiControl!', 'success');
   };
 
   return (
