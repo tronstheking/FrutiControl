@@ -86,17 +86,7 @@ export const MobileDrawer = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="space-y-2 pt-4 border-t border-slate-100">
-          <button
-            onClick={() => {
-              onClose();
-              openModal('pos');
-            }}
-            className="w-full py-3 bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-xl text-xs shadow-md flex items-center justify-center gap-2"
-          >
-            <PlusCircle className="w-4 h-4" /> Venta Rápida POS
-          </button>
-
+        <div className="pt-4 border-t border-slate-100">
           <button
             onClick={() => {
               if (window.confirm("¿Restablecer datos base de demostración?")) {
@@ -104,7 +94,7 @@ export const MobileDrawer = ({ isOpen, onClose }) => {
                 onClose();
               }
             }}
-            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" /> Restablecer Datos
           </button>
