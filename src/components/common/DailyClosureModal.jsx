@@ -53,22 +53,22 @@ ${lowStockItems.length > 0 ? lowStockItems.map(i => `  • ${i.name}: quedan *${
   return (
     <Modal isOpen={isOpen} onClose={closeModal} title="📊 Cierre de Caja del Día" maxWidth="max-w-lg">
       <div className="space-y-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto">
+        <div className="bg-emerald-950 text-emerald-100 rounded-2xl p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto border border-emerald-900 shadow-inner">
           {reportText}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <button
             onClick={handleCopy}
-            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors border border-slate-700 text-sm"
+            className="flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors border border-gray-200 text-xs"
           >
-            <Copy className="w-4 h-4" /> Copiar Texto
+            <Copy className="w-4 h-4 text-emerald-600" /> Copiar Texto
           </button>
           <a
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors text-sm shadow-lg shadow-emerald-600/20"
+            className="flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors text-xs shadow-lg shadow-emerald-200"
           >
             <MessageSquareCode className="w-4 h-4" /> Enviar por WhatsApp
           </a>
