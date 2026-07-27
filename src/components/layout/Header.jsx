@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { NavLink } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { RotateCw, Building2, TrendingUp, Menu, X, PlusCircle, MinusCircle, Lock, Calculator, LogOut } from 'lucide-react';
 import { auth, signOut } from '../../firebase/config';
@@ -27,7 +28,8 @@ export const Header = React.memo(() => {
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => setDrawerOpen(true)}
-            className="p-2 -ml-2 rounded-xl text-gray-600 active:bg-gray-100"
+            className="p-2 -ml-2 rounded-xl text-gray-600 active:bg-gray-100 hover:bg-gray-50 transition-colors"
+            title="Abrir menú"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -40,7 +42,7 @@ export const Header = React.memo(() => {
           <div className="relative">
             <button
               onClick={() => setMenuOpen(v => !v)}
-              className="p-2 -mr-2 rounded-xl text-gray-600 active:bg-gray-100"
+              className="p-2 -mr-2 rounded-xl text-gray-600 active:bg-gray-100 hover:bg-gray-50 transition-colors"
             >
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 rotate-90" />}
             </button>
@@ -86,30 +88,43 @@ export const Header = React.memo(() => {
         </button>
 
         {/* Quick actions row */}
-        <div className="flex gap-2 px-3 py-2 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => openModal('pos')}
-            className="flex-shrink-0 flex items-center gap-1.5 bg-emerald-600 active:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>+ Venta</span>
-          </button>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2">
+            <button
+              onClick={() => openModal('pos')}
+              className="flex-shrink-0 flex items-center gap-1.5 bg-emerald-600 active:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shadow-xs"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Venta</span>
+            </button>
 
-          <button
-            onClick={() => openModal('expense')}
-            className="flex-shrink-0 flex items-center gap-1.5 bg-red-50 active:bg-red-100 text-red-600 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-red-100 transition-colors"
-          >
-            <MinusCircle className="w-4 h-4" />
-            <span>Gasto</span>
-          </button>
+            <button
+              onClick={() => openModal('expense')}
+              className="flex-shrink-0 flex items-center gap-1.5 bg-red-50 active:bg-red-100 text-red-600 text-xs font-bold px-3.5 py-2 rounded-xl border border-red-100 transition-colors"
+            >
+              <MinusCircle className="w-4 h-4" />
+              <span>Gasto</span>
+            </button>
 
-          <button
-            onClick={() => openModal('dailyClosure')}
-            className="flex-shrink-0 flex items-center gap-1.5 bg-gray-100 active:bg-gray-200 text-gray-700 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-gray-200 transition-colors"
-          >
-            <Lock className="w-4 h-4" />
-            <span>Cerrar Día</span>
-          </button>
+            <button
+              onClick={() => openModal('dailyClosure')}
+              className="flex-shrink-0 flex items-center gap-1.5 bg-gray-100 active:bg-gray-200 text-gray-700 text-xs font-bold px-3.5 py-2 rounded-xl border border-gray-200 transition-colors"
+            >
+              <Lock className="w-4 h-4" />
+              <span>Cerrar Día</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Navigation Links */}
+        <div className="hidden lg:flex items-center justify-center gap-1.5 border-t border-gray-100 px-4 py-2 bg-gray-50/70 text-xs font-semibold">
+          <NavLink to="/" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>Inicio</NavLink>
+          <NavLink to="/pos" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>POS</NavLink>
+          <NavLink to="/inventario" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>Inventario</NavLink>
+          <NavLink to="/proveedores" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>Proveedores</NavLink>
+          <NavLink to="/fiados" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>Fiados</NavLink>
+          <NavLink to="/por-pagar" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>Por Pagar</NavLink>
+          <NavLink to="/flujo-caja" className={({ isActive }) => `px-3.5 py-1.5 rounded-lg transition-colors ${isActive ? 'bg-emerald-600 text-white font-bold' : 'text-gray-600 hover:bg-gray-200'}`}>Caja</NavLink>
         </div>
       </header>
 

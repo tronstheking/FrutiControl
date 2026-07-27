@@ -20,7 +20,7 @@ export const MobileBottomNav = React.memo(() => {
       {/* FAB — Nueva Venta */}
       <button
         onClick={() => openModal('pos')}
-        className="fab md:hidden"
+        className="fab lg:hidden"
         aria-label="Nueva Venta Rápida"
       >
         <Zap className="w-4 h-4 fill-white" />
@@ -28,7 +28,7 @@ export const MobileBottomNav = React.memo(() => {
       </button>
 
       {/* Bottom Navigation */}
-      <nav className="bottom-nav md:hidden">
+      <nav className="bottom-nav lg:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;

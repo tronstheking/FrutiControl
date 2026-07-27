@@ -31,7 +31,7 @@ export const MobileDrawer = ({ isOpen, onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden flex">
+    <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs animate-fadeIn"
