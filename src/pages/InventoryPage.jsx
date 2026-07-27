@@ -83,9 +83,18 @@ export const InventoryPage = React.memo(() => {
       {/* Inventory List */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {filteredInventory.length === 0 ? (
-          <div className="py-12 text-center text-gray-400">
+          <div className="py-12 text-center text-gray-400 px-4">
             <p className="text-4xl mb-2">📦</p>
-            <p className="font-semibold text-sm">Sin productos registrados</p>
+            <p className="font-bold text-gray-700 text-sm">Sin productos en el inventario</p>
+            <p className="text-xs text-gray-400 mt-1">Toca "+ Agregar" para añadir productos o restaura la lista inicial</p>
+            <div className="flex justify-center gap-2 mt-4">
+              <button
+                onClick={() => openModal('fruit')}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
+              >
+                + Agregar Producto
+              </button>
+            </div>
           </div>
         ) : (
           filteredInventory.map((item, i) => {

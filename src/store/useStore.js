@@ -30,9 +30,8 @@ const loadInitialState = () => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      const cleanInventory = Array.isArray(parsed.inventory)
+      const cleanInventory = Array.isArray(parsed.inventory) && parsed.inventory.length > 0
         ? parsed.inventory.map(item => {
-            // Remove legacy sample /fruits/ image paths or unsplash links so user can set custom or see clean icons
             if (item.image && (item.image.startsWith('/fruits/') || item.image.includes('unsplash'))) {
               return { ...item, image: null };
             }
@@ -43,7 +42,7 @@ const loadInitialState = () => {
       return {
         capitalInicial: Number(parsed.capitalInicial) || 0,
         inventory: cleanInventory,
-        suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : defaultData.suppliers,
+        suppliers: Array.isArray(parsed.suppliers) && parsed.suppliers.length > 0 ? parsed.suppliers : defaultData.suppliers,
         receivables: Array.isArray(parsed.receivables) ? parsed.receivables : [],
         payables: Array.isArray(parsed.payables) ? parsed.payables : [],
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
@@ -114,8 +113,16 @@ export const useStore = create((set, get) => {
           unsubscribeCloud = onSnapshot(userDocRef, (snap) => {
             if (snap.exists()) {
               const cloud = snap.data();
-              const cloudInventory = Array.isArray(cloud.inventory) ? cloud.inventory : get().inventory;
-              const cloudSuppliers = Array.isArray(cloud.suppliers) ? cloud.suppliers : get().suppliers;
+              const currentInv = get().inventory;
+              const cloudInventory = (Array.isArray(cloud.inventory) && cloud.inventory.length > 0)
+                ? cloud.inventory
+                : (currentInv && currentInv.length > 0 ? currentInv : defaultData.inventory);
+
+              const currentSup = get().suppliers;
+              const cloudSuppliers = (Array.isArray(cloud.suppliers) && cloud.suppliers.length > 0)
+                ? cloud.suppliers
+                : (currentSup && currentSup.length > 0 ? currentSup : defaultData.suppliers);
+
               const cloudReceivables = Array.isArray(cloud.receivables) ? cloud.receivables : get().receivables;
               const cloudPayables = Array.isArray(cloud.payables) ? cloud.payables : get().payables;
               const cloudTransactions = Array.isArray(cloud.transactions) ? cloud.transactions : get().transactions;
@@ -153,9 +160,11 @@ export const useStore = create((set, get) => {
                 payables: get().payables,
                 transactions: get().transactions,
                 createdAt: new Date().toISOString()
-              }, { merge: true }).catch(e => console.warn("Initial cloud push error:", e));
+              }, { merge: true }).catch(e => console.warn("Initial cloud push warning:", e));
             }
-          }, (err) => console.warn("Snapshot error:", err));
+          }, (err) => {
+            console.warn("Snapshot error (Firestore rules/network):", err);
+          });
         } catch (e) {
           console.warn("Error subscripting to cloud database:", e);
         }
