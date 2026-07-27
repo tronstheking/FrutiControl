@@ -131,19 +131,26 @@ export const InventoryPage = React.memo(() => {
                   </div>
                 </div>
 
-                {/* Right: actions (ONLY Pencil and Trash2) */}
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Right: actions (PackagePlus, Pencil, Trash2) */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => openModal('restock', item)}
+                    className="w-9 h-9 rounded-xl bg-emerald-50 active:bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-100"
+                    title="📦 Re-surtir / Sumar Kilos"
+                  >
+                    <PackagePlus className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => openModal('fruit', item)}
                     className="w-9 h-9 rounded-xl bg-blue-50 active:bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-100"
-                    title="Editar"
+                    title="✏️ Editar Producto / Foto"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => { if (window.confirm(`¿Eliminar ${item.name} del inventario?`)) deleteFruit(item.id); }}
                     className="w-9 h-9 rounded-xl bg-red-50 active:bg-red-100 text-red-600 flex items-center justify-center border border-red-100"
-                    title="Eliminar"
+                    title="🗑️ Eliminar"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
