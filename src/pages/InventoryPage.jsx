@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { formatUSD, formatBs, getFruitEmoji } from '../utils/formatters';
-import { Search, Plus, PackagePlus, AlertTriangle, ShoppingCart } from 'lucide-react';
+import { Search, Plus, PackagePlus, AlertTriangle, ShoppingCart, Pencil, Trash2 } from 'lucide-react';
 
 export const InventoryPage = React.memo(() => {
   const inventory = useStore(state => state.inventory);
@@ -98,10 +98,13 @@ export const InventoryPage = React.memo(() => {
             const emoji = getFruitEmoji(item.name);
 
             return (
-              <div key={item.id} className="list-row gap-3">
-                {/* Left: emoji + info */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-2xl shrink-0 border border-gray-100 overflow-hidden">
+              <div key={item.id} className="list-row gap-2.5">
+                {/* Left: emoji + info (clickable to edit) */}
+                <div
+                  onClick={() => openModal('fruit', item)}
+                  className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-2xl shrink-0 border border-gray-100 overflow-hidden group-hover:border-emerald-300 transition-colors">
                     {item.image ? (
                       <img
                         src={item.image}
@@ -114,7 +117,7 @@ export const InventoryPage = React.memo(() => {
                     <span style={{ display: item.image ? 'none' : 'block' }}>{emoji}</span>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
+                    <p className="text-sm font-bold text-gray-900 truncate group-hover:text-emerald-700 transition-colors">{item.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`text-xs font-semibold ${isLow ? 'text-red-500' : 'text-gray-500'}`}>
                         {isLow && '⚠️ '}{kg} kg
@@ -128,21 +131,35 @@ export const InventoryPage = React.memo(() => {
                   </div>
                 </div>
 
-                {/* Right: actions */}
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Right: actions (Edit, Restock, Sell, Delete) */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => openModal('fruit', item)}
+                    className="w-8 h-8 rounded-xl bg-blue-50 active:bg-blue-100 text-blue-600 flex items-center justify-center"
+                    title="Editar Fruta / Imagen"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={() => openModal('restock', item)}
-                    className="w-9 h-9 rounded-xl bg-emerald-50 active:bg-emerald-100 text-emerald-700 flex items-center justify-center"
-                    title="Resurtir"
+                    className="w-8 h-8 rounded-xl bg-emerald-50 active:bg-emerald-100 text-emerald-700 flex items-center justify-center"
+                    title="Resurtir Stock"
                   >
-                    <PackagePlus className="w-4 h-4" />
+                    <PackagePlus className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => { addToPosCart(item); openModal('pos'); }}
-                    className="w-9 h-9 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-700 flex items-center justify-center"
-                    title="Vender"
+                    className="w-8 h-8 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-700 flex items-center justify-center"
+                    title="Vender en POS"
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    <ShoppingCart className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => { if (window.confirm(`¿Eliminar ${item.name} del inventario?`)) deleteFruit(item.id); }}
+                    className="w-8 h-8 rounded-xl bg-red-50 active:bg-red-100 text-red-600 flex items-center justify-center"
+                    title="Eliminar Fruta"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
