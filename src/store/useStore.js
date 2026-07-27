@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { fetchBcvRate } from '../services/bcvService';
-import { auth, db, doc, setDoc } from '../firebase/config';
+import { auth, db, doc, setDoc, onSnapshot } from '../firebase/config';
 
 const STORAGE_KEY = "freshcontrol_ve_db_v1";
+let unsubscribeCloud = null;
 
 const defaultData = {
   capitalInicial: 0,
@@ -69,15 +70,16 @@ export const useStore = create((set, get) => {
       }));
 
       // Firebase Firestore cloud backup
-      const currentUser = auth.currentUser;
-      if (currentUser) {
+      const currentUser = get()?.user || auth.currentUser;
+      if (currentUser && currentUser.uid) {
         setDoc(doc(db, "user_data", currentUser.uid), {
           capitalInicial: newState.capitalInicial,
           inventory: newState.inventory,
           suppliers: newState.suppliers,
           receivables: newState.receivables,
           payables: newState.payables,
-          transactions: newState.transactions
+          transactions: newState.transactions,
+          updatedAt: new Date().toISOString()
         }, { merge: true }).catch(err => console.warn("Firestore sync warning:", err));
       }
     } catch (e) {
@@ -96,10 +98,67 @@ export const useStore = create((set, get) => {
       }
     })(),
     setUser: (user) => {
-      if (user) {
+      if (unsubscribeCloud) {
+        unsubscribeCloud();
+        unsubscribeCloud = null;
+      }
+
+      if (user && user.uid) {
         const userData = { uid: user.uid, email: user.email || 'usuario@fruticontrol.com', isAnonymous: !!user.isAnonymous };
         try { localStorage.setItem('fruticontrol_user_session', JSON.stringify(userData)); } catch (e) {}
         set({ user: userData });
+
+        // Connect to Firebase Cloud Database for this User
+        try {
+          const userDocRef = doc(db, "user_data", user.uid);
+          unsubscribeCloud = onSnapshot(userDocRef, (snap) => {
+            if (snap.exists()) {
+              const cloud = snap.data();
+              const cloudInventory = Array.isArray(cloud.inventory) ? cloud.inventory : get().inventory;
+              const cloudSuppliers = Array.isArray(cloud.suppliers) ? cloud.suppliers : get().suppliers;
+              const cloudReceivables = Array.isArray(cloud.receivables) ? cloud.receivables : get().receivables;
+              const cloudPayables = Array.isArray(cloud.payables) ? cloud.payables : get().payables;
+              const cloudTransactions = Array.isArray(cloud.transactions) ? cloud.transactions : get().transactions;
+              const cloudCapital = cloud.capitalInicial !== undefined ? Number(cloud.capitalInicial) : get().capitalInicial;
+
+              set({
+                capitalInicial: cloudCapital,
+                inventory: cloudInventory,
+                suppliers: cloudSuppliers,
+                receivables: cloudReceivables,
+                payables: cloudPayables,
+                transactions: cloudTransactions
+              });
+
+              // Persist locally
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                  capitalInicial: cloudCapital,
+                  inventory: cloudInventory,
+                  suppliers: cloudSuppliers,
+                  receivables: cloudReceivables,
+                  payables: cloudPayables,
+                  transactions: cloudTransactions
+                }));
+              } catch (e) {}
+
+              get().addToast("☁️ Datos sincronizados desde tu cuenta Firebase.", "info");
+            } else {
+              // Initial push to cloud if new account
+              setDoc(userDocRef, {
+                capitalInicial: get().capitalInicial,
+                inventory: get().inventory,
+                suppliers: get().suppliers,
+                receivables: get().receivables,
+                payables: get().payables,
+                transactions: get().transactions,
+                createdAt: new Date().toISOString()
+              }, { merge: true }).catch(e => console.warn("Initial cloud push error:", e));
+            }
+          }, (err) => console.warn("Snapshot error:", err));
+        } catch (e) {
+          console.warn("Error subscripting to cloud database:", e);
+        }
       } else {
         try { localStorage.removeItem('fruticontrol_user_session'); } catch (e) {}
         set({ user: null });

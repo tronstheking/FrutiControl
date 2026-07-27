@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { auth, signInWithEmailAndPassword } from '../../firebase/config';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../../firebase/config';
 import { LogIn, Citrus, KeyRound, Mail, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export const LoginOverlay = () => {
@@ -16,19 +16,32 @@ export const LoginOverlay = () => {
     e.preventDefault();
     setLoading(true);
     const userEmail = email && email.trim() ? email.trim() : 'demo@fruticontrol.com';
+    const cleanEmail = userEmail.toLowerCase();
+    const fallbackUid = cleanEmail === 'demo@fruticontrol.com'
+      ? 'demo-local-user' 
+      : 'user_' + cleanEmail.replace(/[^a-z0-9]/g, '_');
     
-    // Set logged-in user synchronously to guarantee instant app entry
+    // Set logged-in user with deterministic UID so cloud document matches
     setUser({
-      uid: userEmail === 'demo@fruticontrol.com' ? 'demo-local-user' : `user-${Date.now()}`,
-      email: userEmail,
+      uid: fallbackUid,
+      email: cleanEmail,
       isAnonymous: false
     });
-    addToast(`¡Bienvenido a FrutiControl! (${userEmail})`, 'success');
+    addToast(`¡Bienvenido! Cargando datos de ${cleanEmail}...`, 'success');
 
-    // Optionally attempt Firebase auth sync in background
-    signInWithEmailAndPassword(auth, userEmail, password)
-      .then(cred => setUser(cred.user))
-      .catch(err => console.warn('Background Firebase Auth notice:', err));
+    // Attempt Firebase Auth Login / Auto-Registration
+    if (password && password.length >= 6) {
+      signInWithEmailAndPassword(auth, cleanEmail, password)
+        .then(cred => {
+          setUser(cred.user);
+        })
+        .catch(() => {
+          // If login fails (user doesn't exist), attempt auto-registration
+          createUserWithEmailAndPassword(auth, cleanEmail, password)
+            .then(cred => setUser(cred.user))
+            .catch(err => console.warn('Firebase Auth note:', err.message));
+        });
+    }
   };
 
   const handleBypassDemo = () => {
