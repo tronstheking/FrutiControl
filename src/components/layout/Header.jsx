@@ -4,8 +4,8 @@ import {
   Menu, 
   RotateCw, 
   MoreVertical, 
-  ShoppingCart, 
-  Edit3, 
+  PlusCircle, 
+  MinusCircle, 
   Lock, 
   TrendingUp,
   Building2,
@@ -16,7 +16,6 @@ import { auth, signOut } from '../../firebase/config';
 import { MobileDrawer } from './MobileDrawer';
 
 export const Header = React.memo(() => {
-  // Atomic Selectors to avoid re-renders on unrelated store updates
   const bcvRate = useStore(state => state.bcvRate);
   const bcvLoading = useStore(state => state.bcvLoading);
   const refreshBcvRate = useStore(state => state.refreshBcvRate);
@@ -37,45 +36,45 @@ export const Header = React.memo(() => {
 
   return (
     <>
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 p-3 sm:p-4 space-y-2.5 shadow-sm">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 space-y-3 shadow-xs">
         {/* Top Navbar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setDrawerOpen(true)}
-              className="p-1.5 rounded-xl text-slate-700 hover:bg-slate-100 min-w-[40px] min-h-[40px] flex items-center justify-center"
-              title="Menú"
+              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              title="Menú Principal"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
 
             <div>
-              <h1 className="text-lg sm:text-xl font-black text-[#047857] leading-none tracking-tight">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
                 FrutiControl VE
               </h1>
-              <p className="text-[11px] font-semibold text-slate-500 mt-0.5">POS & Gestión</p>
+              <p className="text-[11px] font-medium text-slate-500">POS & Gestión Frutícola</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => refreshBcvRate(true)}
-              title="Refrescar BCV"
-              className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 min-w-[40px] min-h-[40px] flex items-center justify-center"
+              title="Actualizar Tasa BCV"
+              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
-              <RotateCw className={`w-5 h-5 ${bcvLoading ? 'spin-anim text-emerald-600' : ''}`} />
+              <RotateCw className={`w-4 h-4 ${bcvLoading ? 'spin-anim text-emerald-600' : ''}`} />
             </button>
 
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(prev => !prev)}
-                className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               >
-                <MoreVertical className="w-5 h-5" />
+                <MoreVertical className="w-4 h-4" />
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn text-xs font-semibold">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50 animate-fadeIn text-xs font-medium">
                   <button
                     onClick={() => { setMenuOpen(false); openModal('bcvCalc'); }}
                     className="w-full px-4 py-2.5 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
@@ -94,39 +93,39 @@ export const Header = React.memo(() => {
           </div>
         </div>
 
-        {/* BCV Green Full-Width Banner Pill */}
+        {/* BCV Green Banner */}
         <div
           onClick={() => openModal('bcvCalc')}
-          className="w-full bg-[#059669] hover:bg-[#047857] text-white px-4 py-2.5 rounded-2xl flex items-center justify-between font-bold text-xs shadow-sm cursor-pointer transition-colors"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl flex items-center justify-between font-semibold text-xs shadow-xs cursor-pointer transition-colors"
         >
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 text-emerald-200 shrink-0" />
-            <span>BCV HOY: {bcvRate.toFixed(2)} Bs.</span>
+            <span>Tasa Oficial BCV: <strong className="font-bold">{bcvRate.toFixed(2)} Bs./$</strong></span>
           </div>
           <TrendingUp className="w-4 h-4 text-emerald-200 shrink-0" />
         </div>
 
-        {/* Scrollable Quick Action Buttons */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
+        {/* Quick Actions Row */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5 text-xs">
           <button
             onClick={() => openModal('pos')}
-            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 flex items-center gap-1.5 shrink-0 transition-colors"
+            className="btn-primary shrink-0"
           >
-            <ShoppingCart className="w-4 h-4 text-slate-700" /> + POS Venta
+            <PlusCircle className="w-4 h-4" /> + POS Venta
           </button>
 
           <button
             onClick={() => openModal('expense')}
-            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 flex items-center gap-1.5 shrink-0 transition-colors"
+            className="btn-secondary shrink-0"
           >
-            <Edit3 className="w-4 h-4 text-slate-700" /> Anotar Gasto
+            <MinusCircle className="w-4 h-4 text-rose-500" /> Anotar Gasto
           </button>
 
           <button
             onClick={() => openModal('dailyClosure')}
-            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 flex items-center gap-1.5 shrink-0 transition-colors"
+            className="btn-secondary shrink-0"
           >
-            <Lock className="w-4 h-4 text-slate-700" /> Cerrar Día
+            <Lock className="w-4 h-4 text-slate-500" /> Cerrar Día
           </button>
         </div>
       </header>
