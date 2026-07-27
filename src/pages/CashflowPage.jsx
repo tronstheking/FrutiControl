@@ -31,25 +31,9 @@ export const CashflowPage = React.memo(() => {
   return (
     <div className="space-y-4 page-enter">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-black text-gray-900">Flujo de Caja</h2>
-          <p className="text-xs text-gray-500 font-medium">Historial de movimientos</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => openModal('pos')}
-            className="flex items-center gap-1.5 bg-emerald-600 active:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl"
-          >
-            + Venta
-          </button>
-          <button
-            onClick={() => openModal('expense')}
-            className="flex items-center gap-1.5 bg-red-50 active:bg-red-100 text-red-600 text-xs font-bold px-3 py-2 rounded-xl border border-red-100"
-          >
-            - Gasto
-          </button>
-        </div>
+      <div>
+        <h2 className="text-xl font-black text-gray-900">Flujo de Caja</h2>
+        <p className="text-xs text-gray-500 font-medium">Historial de movimientos y egresos</p>
       </div>
 
       {/* Summary Row */}

@@ -16,10 +16,9 @@ const quickExpensePresets = [
 ];
 
 export const TransactionModal = () => {
-  const { activeModal, modalData, closeModal, addTransaction, bcvRate } = useStore();
+  const { activeModal, closeModal, addTransaction, bcvRate } = useStore();
 
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('Egreso');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(getTodayDateString());
   const amountInputRef = useRef(null);
@@ -27,22 +26,14 @@ export const TransactionModal = () => {
   const isOpen = activeModal === 'expense' || activeModal === 'transaction';
 
   useEffect(() => {
-    if (activeModal === 'expense') {
-      setType('Egreso');
-    } else if (modalData && modalData.type) {
-      setType(modalData.type);
-    } else {
-      setType('Egreso');
-    }
     setDescription('');
     setAmount('');
     setDate(getTodayDateString());
-  }, [modalData, activeModal, isOpen]);
+  }, [activeModal, isOpen]);
 
   if (!isOpen) return null;
 
   const parsedAmount = parseFloat(amount) || 0;
-  const isExpense = type === 'Egreso';
 
   const handleSelectPreset = (presetValue) => {
     setDescription(presetValue);
@@ -57,7 +48,7 @@ export const TransactionModal = () => {
 
     addTransaction({
       description: description.trim(),
-      type,
+      type: 'Egreso',
       amount: parsedAmount,
       date
     });
@@ -69,78 +60,50 @@ export const TransactionModal = () => {
     <Modal 
       isOpen={isOpen} 
       onClose={closeModal} 
-      title={isExpense ? "💸 Registrar Gasto / Egreso" : "🟢 Registrar Ingreso Directo"}
+      title="💸 Registrar Gasto / Egreso"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Toggle Switch */}
-        <div className="bg-gray-100 p-1 rounded-2xl grid grid-cols-2 gap-1">
-          <button
-            type="button"
-            onClick={() => setType('Egreso')}
-            className={`py-3 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-              isExpense
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-200 scale-[1.02]'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <MinusCircle className="w-4 h-4" /> Egreso (Gasto)
-          </button>
-          <button
-            type="button"
-            onClick={() => setType('Ingreso')}
-            className={`py-3 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-              !isExpense
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 scale-[1.02]'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <PlusCircle className="w-4 h-4" /> Ingreso
-          </button>
-        </div>
-
         {/* Quick expense presets chips */}
-        {isExpense && (
-          <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3.5 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[11px] font-black text-rose-800 uppercase tracking-wide">
-                <Zap className="w-3.5 h-3.5 fill-rose-600 text-rose-600 animate-pulse" /> Presets Rápidos (Toca 1 vez)
-              </span>
-              <span className="text-[10px] font-bold text-rose-500">Auto-enfoca el monto</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {quickExpensePresets.map((preset) => {
-                const isSelected = description === preset.value;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset.value)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 flex items-center gap-1 ${
-                      isSelected
-                        ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200 font-extrabold'
-                        : 'bg-white text-gray-700 border-rose-200 hover:border-rose-400 hover:bg-rose-50'
-                    }`}
-                  >
-                    <span>{preset.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+        <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[11px] font-black text-rose-800 uppercase tracking-wide">
+              <Zap className="w-3.5 h-3.5 fill-rose-600 text-rose-600 animate-pulse" /> Presets Rápidos (Toca 1 vez)
+            </span>
+            <span className="text-[10px] font-bold text-rose-500">Auto-enfoca el monto</span>
           </div>
-        )}
+          <div className="flex flex-wrap gap-1.5">
+            {quickExpensePresets.map((preset) => {
+              const isSelected = description === preset.value;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => handleSelectPreset(preset.value)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200 font-extrabold'
+                      : 'bg-white text-gray-700 border-rose-200 hover:border-rose-400 hover:bg-rose-50'
+                  }`}
+                >
+                  <span>{preset.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Description Field */}
         <div>
           <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-            <Tag className={`w-3.5 h-3.5 ${isExpense ? 'text-rose-600' : 'text-emerald-600'}`} /> Descripción / Concepto
+            <Tag className="w-3.5 h-3.5 text-rose-600" /> Descripción / Concepto del Gasto
           </label>
           <input
             type="text"
             required
-            placeholder={isExpense ? "Ej: Gasolina, flete, bolsas, hielo..." : "Ej: Venta directa sin POS..."}
+            placeholder="Ej: Gasolina, flete, bolsas, hielo..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-bold text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all placeholder-gray-400 shadow-xs"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-bold text-sm focus:outline-none focus:border-rose-500 focus:bg-white transition-all placeholder-gray-400 shadow-xs"
           />
         </div>
 
@@ -148,7 +111,7 @@ export const TransactionModal = () => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-              <DollarSign className={`w-3.5 h-3.5 ${isExpense ? 'text-rose-600' : 'text-emerald-600'}`} /> Monto ($ USD)
+              <DollarSign className="w-3.5 h-3.5 text-rose-600" /> Monto ($ USD)
             </label>
             <input
               ref={amountInputRef}
@@ -158,7 +121,7 @@ export const TransactionModal = () => {
               placeholder="Ej: 15.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-black text-base focus:outline-none focus:border-emerald-500 focus:bg-white transition-all placeholder-gray-400 shadow-xs"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-black text-base focus:outline-none focus:border-rose-500 focus:bg-white transition-all placeholder-gray-400 shadow-xs"
             />
           </div>
 
@@ -171,16 +134,14 @@ export const TransactionModal = () => {
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-gray-900 font-bold text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-xs"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-3 text-gray-900 font-bold text-sm focus:outline-none focus:border-rose-500 focus:bg-white transition-all shadow-xs"
             />
           </div>
         </div>
 
         {/* Live BCV Calculation Badge */}
         {parsedAmount > 0 && (
-          <div className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
-            isExpense ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-          }`}>
+          <div className="p-3 rounded-xl border flex items-center justify-between transition-all bg-rose-50 border-rose-200 text-rose-900">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider block opacity-70">Equivalente BCV</span>
               <span className="text-sm font-black">{formatBs(parsedAmount, bcvRate)}</span>
@@ -202,13 +163,9 @@ export const TransactionModal = () => {
           </button>
           <button
             type="submit"
-            className={`w-2/3 py-3.5 text-white font-black rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 ${
-              isExpense
-                ? 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 shadow-rose-200'
-                : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 shadow-emerald-200'
-            }`}
+            className="w-2/3 py-3.5 text-white font-black rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 shadow-rose-200"
           >
-            <span>{isExpense ? 'Guardar Gasto' : 'Guardar Ingreso'}</span>
+            <span>Guardar Gasto</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
