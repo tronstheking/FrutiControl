@@ -108,21 +108,6 @@ export const LoginOverlay = () => {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-xs text-gray-400 font-medium">o</span>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-
-          {/* Demo bypass */}
-          <button
-            onClick={handleBypassDemo} type="button"
-            className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-bold rounded-xl transition-colors border border-gray-200 flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            Acceso Directo de Prueba (Modo Local)
-          </button>
         </div>
       </div>
     </div>
