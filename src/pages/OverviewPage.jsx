@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { 
   BarChart2, 
@@ -11,36 +11,62 @@ import {
 } from 'lucide-react';
 import { formatUSD, formatBs } from '../utils/formatters';
 
-export const OverviewPage = () => {
-  const { 
-    inventory, 
-    receivables, 
-    payables, 
-    transactions, 
-    bcvRate, 
-    openModal 
-  } = useStore();
+export const OverviewPage = React.memo(() => {
+  // Atomic selectors to prevent unnecessary re-renders
+  const inventory = useStore(state => state.inventory);
+  const receivables = useStore(state => state.receivables);
+  const payables = useStore(state => state.payables);
+  const transactions = useStore(state => state.transactions);
+  const bcvRate = useStore(state => state.bcvRate);
+  const openModal = useStore(state => state.openModal);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Memoized Today's Calculations
+  const { soldTodayUSD, salesTodayCount } = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayTransactions = transactions.filter(t => t.date === todayStr);
+    const todayIncomeTrans = todayTransactions.filter(t => t.type === 'Ingreso');
+    return {
+      soldTodayUSD: todayIncomeTrans.reduce((sum, t) => sum + Number(t.amount || 0), 0),
+      salesTodayCount: todayIncomeTrans.length
+    };
+  }, [transactions]);
 
-  const todayTransactions = transactions.filter(t => t.date === todayStr);
-  const todayIncomeTrans = todayTransactions.filter(t => t.type === 'Ingreso');
+  // Memoized Financial Totals
+  const { totalIncomeUSD, totalExpenseUSD, netBalanceUSD } = useMemo(() => {
+    const income = transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const expense = transactions.filter(t => t.type === 'Egreso').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    return {
+      totalIncomeUSD: income,
+      totalExpenseUSD: expense,
+      netBalanceUSD: income - expense
+    };
+  }, [transactions]);
 
-  const soldTodayUSD = todayIncomeTrans.reduce((sum, t) => sum + Number(t.amount), 0);
-  const salesTodayCount = todayIncomeTrans.length;
+  // Memoized Inventory Valuation
+  const { inventoryValueUSD, totalVarieties } = useMemo(() => {
+    return {
+      inventoryValueUSD: inventory.reduce((sum, f) => sum + (Number(f.kg || 0) * Number(f.costKg || f.priceKg || 0)), 0),
+      totalVarieties: inventory.length
+    };
+  }, [inventory]);
 
-  const totalIncomeUSD = transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
-  const totalExpenseUSD = transactions.filter(t => t.type === 'Egreso').reduce((sum, t) => sum + Number(t.amount), 0);
-  const netBalanceUSD = totalIncomeUSD - totalExpenseUSD;
+  // Memoized Pending Receivables (Fiados)
+  const { totalReceivablesUSD, pendingReceivablesCount } = useMemo(() => {
+    const pending = receivables.filter(r => r.status !== 'Pagado');
+    return {
+      totalReceivablesUSD: pending.reduce((sum, r) => sum + (r.remainingAmount !== undefined ? Number(r.remainingAmount) : Number(r.amount || 0)), 0),
+      pendingReceivablesCount: pending.length
+    };
+  }, [receivables]);
 
-  const inventoryValueUSD = inventory.reduce((sum, f) => sum + (Number(f.kg) * Number(f.costKg || f.priceKg)), 0);
-  const totalVarieties = inventory.length;
-
-  const pendingReceivables = receivables.filter(r => r.status !== 'Pagado');
-  const totalReceivablesUSD = pendingReceivables.reduce((sum, r) => sum + (r.remainingAmount !== undefined ? Number(r.remainingAmount) : Number(r.amount)), 0);
-
-  const pendingPayables = payables.filter(p => p.status !== 'Pagado');
-  const totalPayablesUSD = pendingPayables.reduce((sum, p) => sum + Number(p.amount), 0);
+  // Memoized Pending Payables (Deudas)
+  const { totalPayablesUSD, pendingPayablesCount } = useMemo(() => {
+    const pending = payables.filter(p => p.status !== 'Pagado');
+    return {
+      totalPayablesUSD: pending.reduce((sum, p) => sum + Number(p.amount || 0), 0),
+      pendingPayablesCount: pending.length
+    };
+  }, [payables]);
 
   return (
     <div className="space-y-4 pb-16 animate-fadeIn">
@@ -90,7 +116,7 @@ export const OverviewPage = () => {
           <div className="text-[11px] font-medium text-slate-400">{formatBs(totalReceivablesUSD, bcvRate)}</div>
           <div className="pt-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-              {pendingReceivables.length} pendientes
+              {pendingReceivablesCount} pendientes
             </span>
           </div>
         </div>
@@ -99,7 +125,7 @@ export const OverviewPage = () => {
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm space-y-1">
           <span className="text-xs font-semibold text-slate-500 block">Deudas</span>
           <div className="text-lg sm:text-xl font-black text-rose-600">{formatUSD(totalPayablesUSD)}</div>
-          <div className="text-[11px] font-medium text-slate-400">{pendingPayables.length} pendientes</div>
+          <div className="text-[11px] font-medium text-slate-400">{pendingPayablesCount} pendientes</div>
           <div className="pt-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-50 text-rose-700 border border-rose-200">
               VENCIDO
@@ -217,4 +243,4 @@ export const OverviewPage = () => {
       </div>
     </div>
   );
-};
+});

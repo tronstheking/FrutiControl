@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 import { 
   ArrowLeft, 
@@ -15,40 +15,104 @@ import {
 import { formatUSD, formatBs } from '../utils/formatters';
 import { useNavigate } from 'react-router-dom';
 
-export const PosPage = () => {
+// Memoized Product Card Component to prevent re-renders of catalog items
+const ProductCard = React.memo(({ item, onAdd }) => {
+  const stockKg = Number(item.kg || 0);
+  const price = Number(item.priceKg || 0);
+  const hasImage = !!item.image;
+
+  return (
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-3 flex flex-col justify-between relative group hover:border-[#059669] transition-all shadow-sm">
+      {/* Stock Badge */}
+      <div className="absolute top-4 right-4 z-10">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#10b981] text-white shadow-sm">
+          {stockKg}kg
+        </span>
+      </div>
+
+      {/* Product Image */}
+      <div className="w-full h-32 rounded-xl bg-slate-50 overflow-hidden mb-2.5 flex items-center justify-center">
+        {hasImage ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+          />
+        ) : (
+          <span className="text-4xl">🍎</span>
+        )}
+      </div>
+
+      {/* Title & Price */}
+      <div>
+        <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
+        <div className="flex items-center justify-between mt-1">
+          <div>
+            <span className="text-sm font-extrabold text-[#047857]">{formatUSD(price)}</span>
+            <span className="text-[10px] text-slate-400 font-medium">/kg</span>
+          </div>
+
+          {/* Quick Add Button */}
+          <button
+            onClick={() => onAdd(item)}
+            className="w-8 h-8 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export const PosPage = React.memo(() => {
   const navigate = useNavigate();
-  const { 
-    inventory, 
-    posCart, 
-    addToPosCart, 
-    updatePosCartQty, 
-    removePosCartItem, 
-    clearPosCart,
-    processPosCheckout,
-    bcvRate
-  } = useStore();
+
+  // Atomic Zustand Selectors
+  const inventory = useStore(state => state.inventory);
+  const posCart = useStore(state => state.posCart);
+  const addToPosCart = useStore(state => state.addToPosCart);
+  const updatePosCartQty = useStore(state => state.updatePosCartQty);
+  const removePosCartItem = useStore(state => state.removePosCartItem);
+  const clearPosCart = useStore(state => state.clearPosCart);
+  const processPosCheckout = useStore(state => state.processPosCheckout);
+  const bcvRate = useStore(state => state.bcvRate);
 
   const [search, setSearch] = useState('');
   const [payMethod, setPayMethod] = useState('Efectivo USD');
   const [clientName, setClientName] = useState('');
   const [cartExpanded, setCartExpanded] = useState(false);
 
-  const filteredInventory = inventory.filter(f => 
-    f.name.toLowerCase().includes(search.toLowerCase().trim())
-  );
+  // Memoized Filtered Inventory
+  const filteredInventory = useMemo(() => {
+    const term = search.toLowerCase().trim();
+    if (!term) return inventory;
+    return inventory.filter(f => f.name.toLowerCase().includes(term));
+  }, [inventory, search]);
 
-  const totalCartUSD = posCart.reduce((sum, i) => sum + (i.kg * i.priceKg), 0);
-  const totalCartItems = posCart.reduce((sum, i) => sum + i.kg, 0);
+  // Memoized Cart Calculations
+  const { totalCartUSD, totalCartItems } = useMemo(() => {
+    return {
+      totalCartUSD: posCart.reduce((sum, i) => sum + (Number(i.kg || 0) * Number(i.priceKg || 0)), 0),
+      totalCartItems: posCart.reduce((sum, i) => sum + Number(i.kg || 0), 0)
+    };
+  }, [posCart]);
 
-  const handleCheckout = () => {
+  // Memoized Callbacks
+  const handleAddToCart = useCallback((item) => {
+    addToPosCart(item);
+  }, [addToPosCart]);
+
+  const handleCheckout = useCallback(() => {
     if (posCart.length === 0) return;
     processPosCheckout(clientName, payMethod);
-  };
+  }, [posCart.length, processPosCheckout, clientName, payMethod]);
 
   return (
     <div className="space-y-4 pb-28 animate-fadeIn">
       {/* Header Bar */}
-      <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
@@ -115,62 +179,18 @@ export const PosPage = () => {
 
       {/* 2-Column Touch Fruit Product Catalog */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {filteredInventory.map((item) => {
-          const stockKg = Number(item.kg);
-          const price = Number(item.priceKg);
-          const hasImage = !!item.image;
-
-          return (
-            <div
-              key={item.id}
-              className="card-panel p-3 flex flex-col justify-between relative group hover:border-[#059669] transition-all bg-white"
-            >
-              {/* Stock Badge */}
-              <div className="absolute top-4 right-4 z-10">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#10b981] text-white shadow-sm">
-                  {stockKg}kg
-                </span>
-              </div>
-
-              {/* Product Image */}
-              <div className="w-full h-32 rounded-xl bg-slate-50 overflow-hidden mb-2.5 flex items-center justify-center">
-                {hasImage ? (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                ) : (
-                  <span className="text-4xl">🍎</span>
-                )}
-              </div>
-
-              {/* Title & Price */}
-              <div>
-                <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
-                <div className="flex items-center justify-between mt-1">
-                  <div>
-                    <span className="text-sm font-extrabold text-[#047857]">{formatUSD(price)}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">/kg</span>
-                  </div>
-
-                  {/* Quick Add Button */}
-                  <button
-                    onClick={() => addToPosCart(item)}
-                    className="w-8 h-8 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {filteredInventory.map((item) => (
+          <ProductCard
+            key={item.id}
+            item={item}
+            onAdd={handleAddToCart}
+          />
+        ))}
       </div>
 
       {/* Sliding Order Cart Drawer / Bottom Sheet */}
       {posCart.length > 0 && (
-        <div className="card-panel p-4 space-y-3 bg-white border-t-2 border-[#059669]">
+        <div className="bg-white border-t-2 border-[#059669] rounded-2xl p-4 space-y-3 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
               Resumen de Compra ({posCart.length} productos)
@@ -185,7 +205,7 @@ export const PosPage = () => {
 
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {posCart.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl text-xs">
+              <div key={item.id || idx} className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl text-xs">
                 <div>
                   <strong className="text-slate-900 font-bold block">{item.name}</strong>
                   <span className="text-[11px] text-slate-500 font-medium">{formatUSD(item.priceKg)} / kg</span>
@@ -240,7 +260,7 @@ export const PosPage = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div>
             <span className="text-[11px] font-bold text-slate-500 block">
-              {posCart.length} Artículos
+              {posCart.length} Artículos ({totalCartItems.toFixed(1)}kg)
             </span>
             <strong className="text-lg font-black text-[#047857] block leading-tight">
               {formatUSD(totalCartUSD)}
@@ -266,4 +286,4 @@ export const PosPage = () => {
       </div>
     </div>
   );
-};
+});

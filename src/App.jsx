@@ -37,7 +37,8 @@ const PayablesPage = lazy(() => import('./pages/PayablesPage').then(m => ({ defa
 const CashflowPage = lazy(() => import('./pages/CashflowPage').then(m => ({ default: m.CashflowPage })));
 
 export default function App() {
-  const { setUser, refreshBcvRate } = useStore();
+  const setUser = useStore(state => state.setUser);
+  const refreshBcvRate = useStore(state => state.refreshBcvRate);
 
   useEffect(() => {
     refreshBcvRate(false);
@@ -48,6 +49,7 @@ export default function App() {
       }
     });
 
+    // Cleanup subscription to prevent memory leaks
     return () => unsubscribe();
   }, [setUser, refreshBcvRate]);
 

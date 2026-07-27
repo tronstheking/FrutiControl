@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useStore } from '../../store/useStore';
 import { 
   Menu, 
@@ -15,17 +15,25 @@ import {
 import { auth, signOut } from '../../firebase/config';
 import { MobileDrawer } from './MobileDrawer';
 
-export const Header = () => {
-  const { bcvRate, bcvLoading, refreshBcvRate, openModal, setUser } = useStore();
+export const Header = React.memo(() => {
+  // Atomic Selectors to avoid re-renders on unrelated store updates
+  const bcvRate = useStore(state => state.bcvRate);
+  const bcvLoading = useStore(state => state.bcvLoading);
+  const refreshBcvRate = useStore(state => state.refreshBcvRate);
+  const openModal = useStore(state => state.openModal);
+  const setUser = useStore(state => state.setUser);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await signOut(auth);
     } catch (e) {}
     setUser(null);
-  };
+  }, [setUser]);
+
+  const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
 
   return (
     <>
@@ -60,7 +68,7 @@ export const Header = () => {
 
             <div className="relative">
               <button
-                onClick={() => setMenuOpen(!menuOpen)}
+                onClick={() => setMenuOpen(prev => !prev)}
                 className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 min-w-[40px] min-h-[40px] flex items-center justify-center"
               >
                 <MoreVertical className="w-5 h-5" />
@@ -124,7 +132,7 @@ export const Header = () => {
       </header>
 
       {/* Slide Drawer */}
-      <MobileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <MobileDrawer isOpen={drawerOpen} onClose={handleCloseDrawer} />
     </>
   );
-};
+});
