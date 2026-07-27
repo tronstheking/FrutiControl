@@ -8,6 +8,7 @@ export const PayReceivableModal = () => {
   const { activeModal, modalData, closeModal, payReceivable, bcvRate } = useStore();
   const [payAmount, setPayAmount] = useState('');
   const [isFull, setIsFull] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState('📱 Pago Móvil');
 
   const isOpen = activeModal === 'payReceivable';
   if (!isOpen || !modalData) return null;
@@ -18,12 +19,20 @@ export const PayReceivableModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (parsedPay <= 0) return;
-    payReceivable(modalData.id, parsedPay, isFull);
+    payReceivable(modalData.id, parsedPay, isFull, paymentMethod);
     closeModal();
   };
 
+  const paymentMethods = [
+    { label: '📱 Pago Móvil (Bs)', value: '📱 Pago Móvil' },
+    { label: '💵 Efectivo Divisas ($)', value: '💵 Efectivo Divisas' },
+    { label: '💳 Punto de Venta (Bs)', value: '💳 Punto de Venta' },
+    { label: '💵 Efectivo Bolívares (Bs)', value: '💵 Efectivo Bolívares' },
+    { label: '🏦 Transferencia (Zelle/Otros)', value: '🏦 Transferencia' },
+  ];
+
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title={`💰 Cobrar a ${modalData.client}`}>
+    <Modal isOpen={isOpen} onClose={closeModal} title={`💰 Cobrar / Registrar Abono: ${modalData.client}`}>
       <form onSubmit={handleSubmit} className="space-y-4">
 
         {/* Balance */}
@@ -67,6 +76,20 @@ export const PayReceivableModal = () => {
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors" />
           </div>
         )}
+
+        {/* Payment Method Selector */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Método de Pago del Abono</label>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-bold text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors"
+          >
+            {paymentMethods.map(m => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        </div>
 
         {/* Confirm amount */}
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex justify-between items-center text-sm">

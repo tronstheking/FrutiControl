@@ -65,15 +65,24 @@ export const ReceivablesPage = React.memo(() => {
 
               return (
                 <div key={item.id} className="list-row gap-3">
-                  <div className="flex-1 min-w-0">
+                  {/* Left: Client info & debt summary (Clickable for history modal) */}
+                  <div 
+                    onClick={() => openModal('receivableDetails', item)}
+                    className="flex-1 min-w-0 cursor-pointer group"
+                  >
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-gray-900">{item.client}</p>
+                      <p className="text-sm font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">{item.client}</p>
                       {isOverdue && <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />}
                     </div>
                     <p className="text-xs text-gray-500 font-medium truncate mt-0.5">{item.concept}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm font-black text-amber-600">{formatUSD(remaining)}</span>
                       <span className="text-[11px] text-gray-400">{formatBs(remaining, bcvRate)}</span>
+                      {item.abonos && item.abonos.length > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                          {item.abonos.length} abono{item.abonos.length > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                     {isOverdue && (
                       <span className="chip chip-red mt-1">Vencido hace {diffDays}d</span>
@@ -83,13 +92,15 @@ export const ReceivablesPage = React.memo(() => {
                   <div className="flex flex-col gap-2 shrink-0">
                     <button
                       onClick={() => openModal('payReceivable', item)}
-                      className="w-9 h-9 rounded-xl bg-emerald-50 active:bg-emerald-100 text-emerald-700 flex items-center justify-center"
+                      className="w-9 h-9 rounded-xl bg-emerald-50 active:bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-100"
+                      title="Registrar Abono / Cobro"
                     >
                       <HandCoins className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => { if (window.confirm(`¿Borrar fiado de ${item.client}?`)) deleteReceivable(item.id); }}
-                      className="w-9 h-9 rounded-xl bg-red-50 active:bg-red-100 text-red-600 flex items-center justify-center"
+                      className="w-9 h-9 rounded-xl bg-red-50 active:bg-red-100 text-red-600 flex items-center justify-center border border-red-100"
+                      title="Eliminar Fiado"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -107,9 +118,18 @@ export const ReceivablesPage = React.memo(() => {
           <p className="section-header">Cobrados</p>
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             {paid.map(item => (
-              <div key={item.id} className="list-row gap-3 opacity-60">
+              <div 
+                key={item.id} 
+                onClick={() => openModal('receivableDetails', item)}
+                className="list-row gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900">{item.client}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-gray-900">{item.client}</p>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      Historial
+                    </span>
+                  </div>
                   <p className="text-xs text-gray-500 mt-0.5">{item.concept}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

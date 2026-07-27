@@ -354,7 +354,7 @@ export const useStore = create((set, get) => {
       get().addToast("Fiado actualizado.", "info");
     },
 
-    payReceivable: (id, paymentAmount, isFullPayment) => {
+    payReceivable: (id, paymentAmount, isFullPayment, paymentMethod = '📱 Pago Móvil') => {
       const state = get();
       const rec = state.receivables.find(r => r.id === id);
       if (!rec) return;
@@ -365,7 +365,12 @@ export const useStore = create((set, get) => {
       const isPaid = newRemaining === 0;
 
       const today = new Date().toISOString().split("T")[0];
-      const abonoEntry = { date: today, amount: paidVal };
+      const abonoEntry = { 
+        id: Date.now(),
+        date: today, 
+        amount: paidVal,
+        method: paymentMethod
+      };
 
       const updatedReceivables = state.receivables.map(r => {
         if (r.id === id) {
@@ -379,22 +384,23 @@ export const useStore = create((set, get) => {
         return r;
       });
 
-      // Register income transaction
+      // Register income transaction with payment method
       const updatedTransactions = [
         ...state.transactions,
         {
           id: Date.now(),
           date: today,
-          description: `Cobro de Fiado (${rec.client} - ${isPaid ? 'Pago Completo' : 'Abono'})`,
+          description: `Cobro de Fiado [${paymentMethod}] (${rec.client} - ${isPaid ? 'Pago Completo' : 'Abono'})`,
           type: "Ingreso",
-          amount: paidVal
+          amount: paidVal,
+          method: paymentMethod
         }
       ];
 
       const newState = { ...state, receivables: updatedReceivables, transactions: updatedTransactions };
       syncState(newState);
       set({ receivables: updatedReceivables, transactions: updatedTransactions });
-      get().addToast(`💵 ${isPaid ? 'Fiado pagado en su totalidad' : 'Abono registrado'} (${paidVal} USD).`, "success");
+      get().addToast(`💵 Abono de $${paidVal.toFixed(2)} (${paymentMethod}) registrado.`, "success");
     },
 
     deleteReceivable: (id) => {

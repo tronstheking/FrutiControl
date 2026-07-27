@@ -22,6 +22,7 @@ import { WasteModal } from './components/inventory/WasteModal';
 import { SupplierModal } from './components/suppliers/SupplierModal';
 import { ReceivableModal } from './components/receivables/ReceivableModal';
 import { PayReceivableModal } from './components/receivables/PayReceivableModal';
+import { ReceivableDetailsModal } from './components/receivables/ReceivableDetailsModal';
 import { PayableModal } from './components/payables/PayableModal';
 import { TransactionModal } from './components/cashflow/TransactionModal';
 
@@ -84,6 +85,7 @@ export default function App() {
         <SupplierModal />
         <ReceivableModal />
         <PayReceivableModal />
+        <ReceivableDetailsModal />
         <PayableModal />
         <TransactionModal />
       </div>
