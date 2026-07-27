@@ -2,19 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#16a34a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="FrutiControl VE - Sistema POS Avanzado & Gestión Frutícola BCV">
-  <link rel="icon" type="image/svg+xml" href="./lemon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <title>FrutiControl VE - POS & Gestión Frutícola</title>
+  <title>FrutiControl VE - Redireccionando...</title>
+  <script>
+    // Redirect to GitHub Pages root app
+    var repoPath = window.location.pathname.split('/')[1] || '';
+    var redirectUrl = window.location.origin + (repoPath ? '/' + repoPath + '/' : '/');
+    window.location.replace(redirectUrl);
+  </script>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen selection:bg-emerald-500 selection:text-white">
-  <div id="root"></div>
-  <script type="module" src="./src/main.jsx"></script>
+<body style="background:#059669; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
+  <h2>Cargando FrutiControl VE...</h2>
 </body>
 </html>
