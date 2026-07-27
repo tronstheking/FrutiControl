@@ -77,8 +77,24 @@ export const useStore = create((set, get) => {
 
   return {
     // Auth & User State
-    user: null,
-    setUser: (user) => set({ user }),
+    user: (() => {
+      try {
+        const saved = localStorage.getItem('fruticontrol_user_session');
+        return saved ? JSON.parse(saved) : null;
+      } catch (e) {
+        return null;
+      }
+    })(),
+    setUser: (user) => {
+      if (user) {
+        const userData = { uid: user.uid, email: user.email || 'usuario@fruticontrol.com', isAnonymous: !!user.isAnonymous };
+        try { localStorage.setItem('fruticontrol_user_session', JSON.stringify(userData)); } catch (e) {}
+        set({ user: userData });
+      } else {
+        try { localStorage.removeItem('fruticontrol_user_session'); } catch (e) {}
+        set({ user: null });
+      }
+    },
 
     // BCV Rate State
     bcvRate: 36.50,

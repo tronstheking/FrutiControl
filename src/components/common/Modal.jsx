@@ -19,27 +19,39 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div 
-        className={`w-full ${maxWidth} glass-modal rounded-2xl shadow-2xl border border-slate-700/80 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp`}
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4`}
+      style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
+      <div
+        className={`w-full ${maxWidth} bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden`}
+        style={{ animation: 'slideUpModal 0.25s cubic-bezier(0.34,1.56,0.64,1) both' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">{title}</h3>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+          <h3 className="text-base font-bold text-gray-900">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="w-8 h-8 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto flex-1 text-slate-200">
+        <div className="p-5 overflow-y-auto flex-1 text-gray-800">
           {children}
         </div>
       </div>
+
+      <style>{`
+        @keyframes slideUpModal {
+          from { opacity: 0; transform: translateY(40px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 };

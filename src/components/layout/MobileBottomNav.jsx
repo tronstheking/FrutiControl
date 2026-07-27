@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { LayoutGrid, ShoppingCart, Package, Wallet, BookMarked, Zap } from 'lucide-react';
+import { LayoutGrid, Truck, Package, Wallet, BookMarked, Zap } from 'lucide-react';
 
 export const MobileBottomNav = React.memo(() => {
   const { openModal } = useStore();
@@ -9,10 +9,10 @@ export const MobileBottomNav = React.memo(() => {
 
   const navItems = [
     { to: '/', label: 'Inicio', icon: LayoutGrid },
-    { to: '/pos', label: 'POS', icon: ShoppingCart },
     { to: '/inventario', label: 'Stock', icon: Package },
     { to: '/flujo-caja', label: 'Caja', icon: Wallet },
     { to: '/fiados', label: 'Fiados', icon: BookMarked },
+    { to: '/proveedores', label: 'Proveedores', icon: Truck },
   ];
 
   return (

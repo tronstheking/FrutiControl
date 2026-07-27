@@ -3,6 +3,9 @@ import { useStore } from '../../store/useStore';
 import { Modal } from '../common/Modal';
 import { formatUSD, formatBs, getTodayDateString } from '../../utils/formatters';
 
+const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors placeholder-gray-400";
+const labelCls = "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
+
 export const ReceivableModal = () => {
   const { activeModal, modalData, closeModal, addReceivable, editReceivable, bcvRate } = useStore();
 
@@ -22,11 +25,7 @@ export const ReceivableModal = () => {
       setPhone(modalData.phone || '');
       setDueDate(modalData.dueDate || getTodayDateString());
     } else {
-      setClient('');
-      setConcept('');
-      setAmount('');
-      setPhone('');
-      setDueDate(getTodayDateString());
+      setClient(''); setConcept(''); setAmount(''); setPhone(''); setDueDate(getTodayDateString());
     }
   }, [modalData, isOpen]);
 
@@ -37,7 +36,6 @@ export const ReceivableModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!client.trim() || parsedAmount <= 0) return;
-
     const data = {
       client: client.trim(),
       concept: concept.trim() || 'Fiado de Frutas',
@@ -45,7 +43,6 @@ export const ReceivableModal = () => {
       phone: phone.trim(),
       dueDate
     };
-
     if (modalData && modalData.id) {
       editReceivable(modalData.id, data);
     } else {
@@ -55,93 +52,58 @@ export const ReceivableModal = () => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title={modalData ? "Editar Fiado" : "📓 Anotar Fiado en Cuaderno Digital"}>
+    <Modal isOpen={isOpen} onClose={closeModal} title={modalData ? "✏️ Editar Fiado" : "📓 Anotar Fiado"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Nombre del Cliente</label>
-          <input
-            type="text"
-            required
-            placeholder="Ej: Sra. María Pérez"
-            value={client}
-            onChange={(e) => setClient(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-          />
+          <label className={labelCls}>Nombre del Cliente</label>
+          <input type="text" required placeholder="Ej: Sra. María Pérez" value={client}
+            onChange={(e) => setClient(e.target.value)} className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Teléfono / WhatsApp</label>
-          <input
-            type="text"
-            placeholder="Ej: 04121234567"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-          />
+          <label className={labelCls}>Teléfono / WhatsApp</label>
+          <input type="text" placeholder="Ej: 04121234567" value={phone}
+            onChange={(e) => setPhone(e.target.value)} className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Concepto / Frutas Acomodadas</label>
-          <input
-            type="text"
-            required
-            placeholder="Ej: 2kg Cambur + 1kg Fresa"
-            value={concept}
-            onChange={(e) => setConcept(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-          />
+          <label className={labelCls}>Concepto / Frutas Acomodadas</label>
+          <input type="text" required placeholder="Ej: 2kg Cambur + 1kg Fresa" value={concept}
+            onChange={(e) => setConcept(e.target.value)} className={inputCls} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Monto Deuda ($ USD)</label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              placeholder="Ej: 12.50"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-            />
+            <label className={labelCls}>Monto Deuda ($ USD)</label>
+            <input type="number" step="0.01" required placeholder="Ej: 12.50" value={amount}
+              onChange={(e) => setAmount(e.target.value)} className={inputCls} />
           </div>
-
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Fecha Acordada</label>
-            <input
-              type="date"
-              required
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-            />
+            <label className={labelCls}>Fecha Acordada</label>
+            <input type="date" required value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
           </div>
         </div>
 
-        {/* Dynamic Dual Currency Auto-Recalculated Banner */}
-        <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3.5 flex justify-between items-center text-xs">
+        {/* Live total preview */}
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex justify-between items-center">
           <div>
-            <span className="text-[10px] font-bold text-amber-400 uppercase block">Deuda Fija ($ USD)</span>
-            <span className="text-lg font-black text-amber-400">{formatUSD(parsedAmount)}</span>
+            <span className="text-xs font-bold text-amber-700 uppercase block">Deuda en Dólares</span>
+            <span className="text-2xl font-black text-amber-700">{formatUSD(parsedAmount)}</span>
           </div>
           <div className="text-right">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Hoy en Bolívares (BCV)</span>
-            <span className="text-xs font-bold text-white">{formatBs(parsedAmount, bcvRate)}</span>
+            <span className="text-xs font-bold text-gray-400 uppercase block">En Bolívares hoy</span>
+            <span className="text-base font-black text-gray-700">{formatBs(parsedAmount, bcvRate)}</span>
           </div>
         </div>
 
         <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
-          >
+          <button type="button" onClick={closeModal}
+            className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors">
             Cancelar
           </button>
-          <button
-            type="submit"
-            className="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 transition-colors"
-          >
+          <button type="submit"
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-200 transition-colors">
             Anotar Fiado
           </button>
         </div>

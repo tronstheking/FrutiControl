@@ -10,7 +10,6 @@ export const PayReceivableModal = () => {
   const [isFull, setIsFull] = useState(true);
 
   const isOpen = activeModal === 'payReceivable';
-
   if (!isOpen || !modalData) return null;
 
   const remaining = modalData.remainingAmount !== undefined ? Number(modalData.remainingAmount) : Number(modalData.amount);
@@ -24,38 +23,36 @@ export const PayReceivableModal = () => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title={`💵 Registrar Cobro / Abono (${modalData.client})`}>
+    <Modal isOpen={isOpen} onClose={closeModal} title={`💰 Cobrar a ${modalData.client}`}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex justify-between items-center text-xs">
+
+        {/* Balance */}
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex justify-between items-center">
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Saldo Pendiente</span>
-            <span className="text-lg font-black text-amber-400">{formatUSD(remaining)}</span>
+            <span className="text-xs font-bold text-amber-600 uppercase block">Saldo Pendiente</span>
+            <span className="text-2xl font-black text-amber-700">{formatUSD(remaining)}</span>
           </div>
           <div className="text-right">
-            <span className="text-[10px] font-bold text-slate-400 uppercase block">Equivalente Hoy (BCV)</span>
-            <span className="text-xs font-bold text-white">{formatBs(remaining, bcvRate)}</span>
+            <span className="text-xs font-bold text-gray-400 uppercase block">En Bolívares</span>
+            <span className="text-base font-bold text-gray-700">{formatBs(remaining, bcvRate)}</span>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Tipo de Pago</label>
+        {/* Payment type toggle */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Tipo de Pago</label>
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setIsFull(true)}
-              className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors ${
-                isFull ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900 text-slate-400 border-slate-800'
-              }`}
-            >
-              Pago Completo ({formatUSD(remaining)})
+            <button type="button" onClick={() => setIsFull(true)}
+              className={`py-3 rounded-xl text-sm font-bold border transition-all ${
+                isFull ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-gray-50 text-gray-600 border-gray-200'
+              }`}>
+              Pago Total<br />
+              <span className="text-xs font-semibold opacity-80">{formatUSD(remaining)}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setIsFull(false)}
-              className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors ${
-                !isFull ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900 text-slate-400 border-slate-800'
-              }`}
-            >
+            <button type="button" onClick={() => setIsFull(false)}
+              className={`py-3 rounded-xl text-sm font-bold border transition-all ${
+                !isFull ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-gray-50 text-gray-600 border-gray-200'
+              }`}>
               Abono Parcial
             </button>
           </div>
@@ -63,37 +60,28 @@ export const PayReceivableModal = () => {
 
         {!isFull && (
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Monto del Abono ($ USD)</label>
-            <input
-              type="number"
-              step="0.01"
-              required
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Monto del Abono ($ USD)</label>
+            <input type="number" step="0.01" required
               placeholder={`Máx: ${remaining.toFixed(2)}`}
-              value={payAmount}
-              onChange={(e) => setPayAmount(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-            />
+              value={payAmount} onChange={(e) => setPayAmount(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors" />
           </div>
         )}
 
-        <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 flex justify-between items-center text-xs">
-          <span className="font-bold text-emerald-400">Total a registrar como ingreso:</span>
-          <span className="font-extrabold text-white">{formatUSD(parsedPay)} ({formatBs(parsedPay, bcvRate)})</span>
+        {/* Confirm amount */}
+        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex justify-between items-center text-sm">
+          <span className="font-semibold text-emerald-700">Total a registrar:</span>
+          <span className="font-extrabold text-emerald-700">{formatUSD(parsedPay)} · {formatBs(parsedPay, bcvRate)}</span>
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
-          >
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={closeModal}
+            className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors">
             Cancelar
           </button>
-          <button
-            type="submit"
-            className="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 transition-colors flex items-center justify-center gap-1.5"
-          >
-            <HandCoins className="w-4 h-4" /> Guardar Pago
+          <button type="submit"
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-colors">
+            <HandCoins className="w-4 h-4" /> Registrar Cobro
           </button>
         </div>
       </form>

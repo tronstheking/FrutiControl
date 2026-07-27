@@ -3,6 +3,9 @@ import { useStore } from '../../store/useStore';
 import { Modal } from '../common/Modal';
 import { getTodayDateString } from '../../utils/formatters';
 
+const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 font-medium text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors placeholder-gray-400";
+const labelCls = "block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5";
+
 export const PayableModal = () => {
   const { activeModal, modalData, closeModal, addPayable, editPayable, suppliers } = useStore();
 
@@ -20,10 +23,7 @@ export const PayableModal = () => {
       setAmount(modalData.amount !== undefined ? modalData.amount : '');
       setDueDate(modalData.dueDate || getTodayDateString());
     } else {
-      setSupplier('');
-      setConcept('');
-      setAmount('');
-      setDueDate(getTodayDateString());
+      setSupplier(''); setConcept(''); setAmount(''); setDueDate(getTodayDateString());
     }
   }, [modalData, isOpen]);
 
@@ -34,14 +34,7 @@ export const PayableModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!supplier.trim() || parsedAmount <= 0) return;
-
-    const data = {
-      supplier: supplier.trim(),
-      concept: concept.trim() || 'Deuda de Mercancía',
-      amount: parsedAmount,
-      dueDate
-    };
-
+    const data = { supplier: supplier.trim(), concept: concept.trim() || 'Deuda de Mercancía', amount: parsedAmount, dueDate };
     if (modalData && modalData.id) {
       editPayable(modalData.id, data);
     } else {
@@ -51,74 +44,49 @@ export const PayableModal = () => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} title={modalData ? "Editar Deuda a Proveedor" : "Registrar Cuenta por Pagar"}>
+    <Modal isOpen={isOpen} onClose={closeModal} title={modalData ? "✏️ Editar Deuda" : "🧾 Registrar Deuda a Proveedor"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Proveedor / Mayorista</label>
-          <input
-            type="text"
-            required
-            list="supplier-list-opts"
-            placeholder="Ej: Frutícola Los Andes"
-            value={supplier}
-            onChange={(e) => setSupplier(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-          />
+          <label className={labelCls}>Proveedor / Mayorista</label>
+          <input type="text" required list="supplier-list-opts" placeholder="Ej: Frutícola Los Andes"
+            value={supplier} onChange={(e) => setSupplier(e.target.value)} className={inputCls} />
           <datalist id="supplier-list-opts">
             {suppliers.map(s => <option key={s.id} value={s.name} />)}
           </datalist>
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Concepto</label>
-          <input
-            type="text"
-            required
-            placeholder="Ej: Factura #4050 (10 cestas de fresa)"
-            value={concept}
-            onChange={(e) => setConcept(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-          />
+          <label className={labelCls}>Concepto</label>
+          <input type="text" required placeholder="Ej: Factura #4050 (10 cestas de fresa)"
+            value={concept} onChange={(e) => setConcept(e.target.value)} className={inputCls} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Monto Deuda ($ USD)</label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              placeholder="Ej: 150.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-            />
+            <label className={labelCls}>Monto Deuda ($ USD)</label>
+            <input type="number" step="0.01" required placeholder="Ej: 150.00"
+              value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
           </div>
-
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Fecha de Pago</label>
-            <input
-              type="date"
-              required
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium text-sm focus:outline-none focus:border-emerald-500"
-            />
+            <label className={labelCls}>Fecha de Pago</label>
+            <input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
           </div>
         </div>
 
+        {parsedAmount > 0 && (
+          <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-sm">
+            <span className="text-red-600 font-semibold">Deuda a registrar: </span>
+            <span className="text-red-700 font-black">${parsedAmount.toFixed(2)} USD</span>
+          </div>
+        )}
+
         <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={closeModal}
-            className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
-          >
+          <button type="button" onClick={closeModal}
+            className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors">
             Cancelar
           </button>
-          <button
-            type="submit"
-            className="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 transition-colors"
-          >
+          <button type="submit"
+            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-200 transition-colors">
             Guardar Deuda
           </button>
         </div>
