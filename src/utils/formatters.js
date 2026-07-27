@@ -21,10 +21,19 @@ export const getTodayDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
-export const formatDate = (dateStr) => {
-  if (!dateStr) return "-";
-  const parts = dateStr.split("-");
-  if (parts.length < 3) return dateStr;
+export const formatDate = (dateInput) => {
+  if (!dateInput) return "-";
+  let str = String(dateInput);
+  if (typeof dateInput === 'number' || dateInput instanceof Date) {
+    try {
+      str = new Date(dateInput).toISOString().split("T")[0];
+    } catch (e) {
+      return "-";
+    }
+  }
+  if (!str.includes("-")) return str;
+  const parts = str.split("T")[0].split("-");
+  if (parts.length < 3) return str;
   const [year, month, day] = parts;
   return `${day}/${month}/${year}`;
 };
