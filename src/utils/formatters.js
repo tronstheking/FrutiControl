@@ -40,10 +40,10 @@ export const formatDate = (dateInput) => {
 
 export const getFruitEmoji = (name = "") => {
   const n = name.toLowerCase();
+  // Containers / Envases / Tobos / Cajas / Empaques / Botellas / Vasos / Potes
+  if (n.includes("envase") || n.includes("pote") || n.includes("tobo") || n.includes("caja") || n.includes("frasco") || n.includes("empaque") || n.includes("contenedor") || n.includes("vaso") || n.includes("botella") || n.includes("garrafa")) return "🫙";
   // Bags / Sacos
-  if (n.includes("bolsa") || n.includes("saco")) return "🛍️";
-  // Containers / Tobos / Cajas / Empaques
-  if (n.includes("envase") || n.includes("tobo") || n.includes("caja") || n.includes("frasco") || n.includes("pote") || n.includes("empaque")) return "🫙";
+  if (n.includes("bolsa") || n.includes("saco") || n.includes("bolsita")) return "🛍️";
   // Fruits
   if (n.includes("cambur") || n.includes("banano")) return "🍌";
   if (n.includes("parchita") || n.includes("maracuyá")) return "🍈";
