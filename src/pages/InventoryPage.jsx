@@ -131,35 +131,21 @@ export const InventoryPage = React.memo(() => {
                   </div>
                 </div>
 
-                {/* Right: actions (Edit, Restock, Sell, Delete) */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* Right: actions (ONLY Pencil and Trash2) */}
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => openModal('fruit', item)}
-                    className="w-8 h-8 rounded-xl bg-blue-50 active:bg-blue-100 text-blue-600 flex items-center justify-center"
-                    title="Editar Fruta / Imagen"
+                    className="w-9 h-9 rounded-xl bg-blue-50 active:bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-100"
+                    title="Editar"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => openModal('restock', item)}
-                    className="w-8 h-8 rounded-xl bg-emerald-50 active:bg-emerald-100 text-emerald-700 flex items-center justify-center"
-                    title="Resurtir Stock"
-                  >
-                    <PackagePlus className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => { addToPosCart(item); openModal('pos'); }}
-                    className="w-8 h-8 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-700 flex items-center justify-center"
-                    title="Vender en POS"
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5" />
+                    <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => { if (window.confirm(`¿Eliminar ${item.name} del inventario?`)) deleteFruit(item.id); }}
-                    className="w-8 h-8 rounded-xl bg-red-50 active:bg-red-100 text-red-600 flex items-center justify-center"
-                    title="Eliminar Fruta"
+                    className="w-9 h-9 rounded-xl bg-red-50 active:bg-red-100 text-red-600 flex items-center justify-center border border-red-100"
+                    title="Eliminar"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
