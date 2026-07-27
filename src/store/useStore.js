@@ -7,14 +7,12 @@ const STORAGE_KEY = "freshcontrol_ve_db_v1";
 const defaultData = {
   capitalInicial: 0,
   inventory: [
-    { id: 101, name: "Fresa de Colonia Tovar", kg: 50, priceKg: 4.80, costKg: 3.00, supplier: "Frutícola Los Andes" },
-    { id: 102, name: "Cambur Criollo", kg: 120, priceKg: 0.80, costKg: 0.50, supplier: "Mayorista Mercado de Coche" },
-    { id: 103, name: "Parchita Silvestre", kg: 25, priceKg: 2.50, costKg: 1.50, supplier: "Frutícola Los Andes" },
-    { id: 104, name: "Patilla Dulce", kg: 200, priceKg: 0.60, costKg: 0.35, supplier: "Comercializadora Barquisimeto" },
-    { id: 105, name: "Mango de Hilacha", kg: 90, priceKg: 0.90, costKg: 0.55, supplier: "Mayorista Mercado de Coche" },
-    { id: 106, name: "Aguacate Hass", kg: 45, priceKg: 3.50, costKg: 2.10, supplier: "Frutícola Los Andes" },
-    { id: 107, name: "Lechosa Maradol", kg: 80, priceKg: 1.20, costKg: 0.75, supplier: "Distribuidora La Guaira" },
-    { id: 108, name: "Naranja Criolla", kg: 150, priceKg: 0.70, costKg: 0.40, supplier: "Comercializadora Barquisimeto" }
+    { id: 101, name: "Manzana Gala", kg: 45, priceKg: 2.50, costKg: 1.50, image: "/fruits/manzana_gala.png", supplier: "Frutícola Los Andes" },
+    { id: 102, name: "Naranja Val.", kg: 12, priceKg: 1.20, costKg: 0.70, image: "/fruits/naranja_val.png", supplier: "Comercializadora Barquisimeto" },
+    { id: 103, name: "Cambur Banano", kg: 80, priceKg: 0.80, costKg: 0.45, image: "/fruits/cambur_banano.png", supplier: "Mayorista Mercado de Coche" },
+    { id: 104, name: "Mango Tommy", kg: 3, priceKg: 1.50, costKg: 0.90, image: "/fruits/mango_tommy.png", supplier: "Mayorista Mercado de Coche" },
+    { id: 105, name: "Lechoza", kg: 15, priceKg: 0.95, costKg: 0.55, image: "/fruits/lechoza.png", supplier: "Distribuidora La Guaira" },
+    { id: 106, name: "Aguacate Hass", kg: 25, priceKg: 3.00, costKg: 1.80, image: "/fruits/aguacate_hass.png", supplier: "Frutícola Los Andes" }
   ],
   suppliers: [
     { id: 1, name: "Frutícola Los Andes", fruit: "Fresas, Parchitas, Aguacate", phone: "+58 412 5550199", location: "Mérida / Colonia Tovar" },

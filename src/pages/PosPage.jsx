@@ -1,86 +1,268 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { Store, Plus, ShoppingCart, AlertTriangle } from 'lucide-react';
-import { formatUSD, getFruitEmoji } from '../utils/formatters';
+import { 
+  ArrowLeft, 
+  ShoppingCart, 
+  Search, 
+  Mic, 
+  SlidersHorizontal, 
+  Plus, 
+  ChevronRight, 
+  Minus, 
+  Trash2,
+  Check
+} from 'lucide-react';
+import { formatUSD, formatBs } from '../utils/formatters';
+import { useNavigate } from 'react-router-dom';
 
 export const PosPage = () => {
-  const { inventory, openModal, addToPosCart } = useStore();
+  const navigate = useNavigate();
+  const { 
+    inventory, 
+    posCart, 
+    addToPosCart, 
+    updatePosCartQty, 
+    removePosCartItem, 
+    clearPosCart,
+    processPosCheckout,
+    bcvRate
+  } = useStore();
+
+  const [search, setSearch] = useState('');
+  const [payMethod, setPayMethod] = useState('Efectivo USD');
+  const [clientName, setClientName] = useState('');
+  const [cartExpanded, setCartExpanded] = useState(false);
+
+  const filteredInventory = inventory.filter(f => 
+    f.name.toLowerCase().includes(search.toLowerCase().trim())
+  );
+
+  const totalCartUSD = posCart.reduce((sum, i) => sum + (i.kg * i.priceKg), 0);
+  const totalCartItems = posCart.reduce((sum, i) => sum + i.kg, 0);
+
+  const handleCheckout = () => {
+    if (posCart.length === 0) return;
+    processPosCheckout(clientName, payMethod);
+  };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Page Header */}
-      <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-            <Store className="w-6 h-6 text-emerald-400" /> Terminal POS de Ventas
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Selecciona o toca cualquier fruta del catálogo para abrir la caja registradora táctil
-          </p>
+    <div className="space-y-4 pb-28 animate-fadeIn">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="p-1.5 text-[#047857] hover:bg-emerald-50 rounded-xl transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <h2 className="text-lg font-black text-[#047857]">Punto de Venta</h2>
         </div>
 
         <button
-          onClick={() => openModal('pos')}
-          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 shrink-0"
+          onClick={() => setCartExpanded(!cartExpanded)}
+          className="relative p-2 rounded-xl text-[#047857] hover:bg-emerald-50 transition-colors"
         >
-          <ShoppingCart className="w-4 h-4" /> Abrir POS Completo
+          <ShoppingCart className="w-6 h-6" />
+          {posCart.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#059669] text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md">
+              {posCart.length}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* Touch Grid Catalog */}
-      <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-          👉 Toca una fruta para vender:
-        </h3>
+      {/* Round Search Bar */}
+      <div className="relative">
+        <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
+        <input
+          type="text"
+          placeholder="Buscar producto..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-full pl-11 pr-20 py-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#059669] shadow-sm"
+        />
+        <div className="absolute right-3 top-2.5 flex items-center gap-1.5 text-slate-400">
+          <button className="p-1 hover:text-slate-700">
+            <Mic className="w-4 h-4" />
+          </button>
+          <button className="p-1 hover:text-slate-700">
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
-        {inventory.length === 0 ? (
-          <div className="py-16 text-center text-slate-500 space-y-3">
-            <Store className="w-10 h-10 mx-auto text-slate-600" />
-            <p className="text-sm font-medium">No hay frutas registradas en el catálogo de la caja registradora.</p>
+      {/* Payment Method Selector Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs font-bold">
+        {['Efectivo USD', 'Pago Móvil', 'Zelle', 'BCV Bs.', 'Fiado / Crédito'].map((method) => {
+          const isActive = payMethod === method;
+          return (
             <button
-              onClick={() => openModal('fruit')}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-colors"
+              key={method}
+              onClick={() => setPayMethod(method)}
+              className={`px-4 py-2.5 rounded-2xl flex items-center gap-1.5 shrink-0 transition-all ${
+                isActive
+                  ? 'bg-[#059669] text-white shadow-md'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
             >
-              + Agregar Fruta Manual
+              {isActive && <Check className="w-3.5 h-3.5" />}
+              <span>{method}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 2-Column Touch Fruit Product Catalog */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {filteredInventory.map((item) => {
+          const stockKg = Number(item.kg);
+          const price = Number(item.priceKg);
+          const hasImage = !!item.image;
+
+          return (
+            <div
+              key={item.id}
+              className="card-panel p-3 flex flex-col justify-between relative group hover:border-[#059669] transition-all bg-white"
+            >
+              {/* Stock Badge */}
+              <div className="absolute top-4 right-4 z-10">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#10b981] text-white shadow-sm">
+                  {stockKg}kg
+                </span>
+              </div>
+
+              {/* Product Image */}
+              <div className="w-full h-32 rounded-xl bg-slate-50 overflow-hidden mb-2.5 flex items-center justify-center">
+                {hasImage ? (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <span className="text-4xl">🍎</span>
+                )}
+              </div>
+
+              {/* Title & Price */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
+                <div className="flex items-center justify-between mt-1">
+                  <div>
+                    <span className="text-sm font-extrabold text-[#047857]">{formatUSD(price)}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">/kg</span>
+                  </div>
+
+                  {/* Quick Add Button */}
+                  <button
+                    onClick={() => addToPosCart(item)}
+                    className="w-8 h-8 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Sliding Order Cart Drawer / Bottom Sheet */}
+      {posCart.length > 0 && (
+        <div className="card-panel p-4 space-y-3 bg-white border-t-2 border-[#059669]">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
+              Resumen de Compra ({posCart.length} productos)
+            </h3>
+            <button
+              onClick={clearPosCart}
+              className="text-xs text-rose-600 font-bold hover:underline"
+            >
+              Vaciar Carrito
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {inventory.map((fruit) => {
-              const emoji = getFruitEmoji(fruit.name);
-              const isLow = Number(fruit.kg) <= 10;
-              return (
-                <div
-                  key={fruit.id}
-                  onClick={() => {
-                    addToPosCart(fruit);
-                    openModal('pos');
-                  }}
-                  className={`pos-touch-card p-4 rounded-2xl border cursor-pointer flex flex-col justify-between relative overflow-hidden ${
-                    isLow 
-                      ? 'bg-rose-950/20 border-rose-500/30 hover:border-rose-500/60' 
-                      : 'bg-slate-900 border-slate-800 hover:border-emerald-500/50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-3xl">{emoji}</span>
-                    <span className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">
-                      <Plus className="w-4 h-4" />
-                    </span>
+
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {posCart.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl text-xs">
+                <div>
+                  <strong className="text-slate-900 font-bold block">{item.name}</strong>
+                  <span className="text-[11px] text-slate-500 font-medium">{formatUSD(item.priceKg)} / kg</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg p-0.5">
+                    <button
+                      onClick={() => updatePosCartQty(idx, -0.5)}
+                      className="w-6 h-6 rounded bg-slate-100 text-slate-700 flex items-center justify-center font-bold"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-8 text-center font-extrabold text-slate-900">{item.kg}kg</span>
+                    <button
+                      onClick={() => updatePosCartQty(idx, 0.5)}
+                      className="w-6 h-6 rounded bg-slate-100 text-slate-700 flex items-center justify-center font-bold"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
                   </div>
 
-                  <div>
-                    <h4 className="text-xs font-bold text-white leading-tight line-clamp-1">{fruit.name}</h4>
-                    <p className="text-sm font-black text-emerald-400 mt-0.5">{formatUSD(fruit.priceKg)}<span className="text-[10px] text-slate-400 font-normal">/kg</span></p>
-                    <span className={`text-[10px] font-semibold block mt-1 ${isLow ? 'text-rose-400 font-bold flex items-center gap-0.5' : 'text-slate-400'}`}>
-                      {isLow && <AlertTriangle className="w-3 h-3" />} {fruit.kg} kg dispon.
-                    </span>
-                  </div>
+                  <strong className="text-xs font-extrabold text-[#047857] w-14 text-right">
+                    {formatUSD(item.kg * item.priceKg)}
+                  </strong>
+
+                  <button
+                    onClick={() => removePosCartItem(idx)}
+                    className="p-1 text-slate-400 hover:text-rose-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
-        )}
+
+          {payMethod === 'Fiado / Crédito' && (
+            <input
+              type="text"
+              placeholder="Nombre del Cliente..."
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Fixed Checkout Bar */}
+      <div className="fixed bottom-14 left-0 right-0 z-30 bg-white border-t border-slate-200 p-3 shadow-2xl md:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div>
+            <span className="text-[11px] font-bold text-slate-500 block">
+              {posCart.length} Artículos
+            </span>
+            <strong className="text-lg font-black text-[#047857] block leading-tight">
+              {formatUSD(totalCartUSD)}
+            </strong>
+            <span className="text-[10px] text-slate-400 font-semibold block">
+              {formatBs(totalCartUSD, bcvRate)}
+            </span>
+          </div>
+
+          <button
+            onClick={handleCheckout}
+            disabled={posCart.length === 0}
+            className={`px-8 py-3.5 rounded-2xl font-black text-xs text-white shadow-lg flex items-center gap-2 transition-all ${
+              posCart.length > 0
+                ? 'bg-[#047857] hover:bg-[#065f46] shadow-emerald-800/20 active:scale-95'
+                : 'bg-slate-300 cursor-not-allowed shadow-none'
+            }`}
+          >
+            <span>Pagar</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

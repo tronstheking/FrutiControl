@@ -1,207 +1,220 @@
 import React from 'react';
 import { useStore } from '../store/useStore';
-import { MetricCard } from '../components/common/MetricCard';
 import { 
-  CalendarDays, 
-  Vault, 
-  Boxes, 
-  BookMarked, 
-  Receipt, 
-  TrendingUp, 
-  Scale, 
+  BarChart2, 
+  Rocket, 
+  ArrowUpRight, 
   ArrowDownRight, 
-  ArrowUpRight,
-  ShoppingCart
+  Scale, 
+  ChevronRight,
+  CheckCircle2
 } from 'lucide-react';
-import { formatUSD, formatBs, getTodayDateString } from '../utils/formatters';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid, 
-  Legend 
-} from 'recharts';
+import { formatUSD, formatBs } from '../utils/formatters';
 
 export const OverviewPage = () => {
   const { 
-    bcvRate, 
-    capitalInicial, 
     inventory, 
     receivables, 
     payables, 
     transactions, 
+    bcvRate, 
     openModal 
   } = useStore();
 
-  const todayStr = getTodayDateString();
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  const todayIncomeTransactions = transactions.filter(t => t.type === 'Ingreso' && t.date === todayStr);
-  const todaySalesUSD = todayIncomeTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-  const todaySalesCount = todayIncomeTransactions.length;
+  // Today's Sales & Transactions
+  const todayTransactions = transactions.filter(t => t.date === todayStr);
+  const todayIncomeTrans = todayTransactions.filter(t => t.type === 'Ingreso');
+  const todayExpenseTrans = todayTransactions.filter(t => t.type === 'Egreso');
 
-  const totalIncome = transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
-  const totalExpense = transactions.filter(t => t.type === 'Egreso').reduce((sum, t) => sum + Number(t.amount), 0);
-  const currentCapital = capitalInicial + totalIncome - totalExpense;
+  const soldTodayUSD = todayIncomeTrans.reduce((sum, t) => sum + Number(t.amount), 0);
+  const salesTodayCount = todayIncomeTrans.length;
 
-  const inventoryValue = inventory.reduce((sum, item) => sum + (Number(item.kg) * Number(item.priceKg)), 0);
+  const totalIncomeUSD = transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalExpenseUSD = transactions.filter(t => t.type === 'Egreso').reduce((sum, t) => sum + Number(t.amount), 0);
+  const netBalanceUSD = totalIncomeUSD - totalExpenseUSD;
 
-  const totalReceivables = receivables
-    .filter(r => r.status === 'Pendiente')
-    .reduce((sum, r) => sum + (r.remainingAmount !== undefined ? Number(r.remainingAmount) : Number(r.amount)), 0);
+  // Inventory value
+  const inventoryValueUSD = inventory.reduce((sum, f) => sum + (Number(f.kg) * Number(f.costKg || f.priceKg)), 0);
+  const totalVarieties = inventory.length;
 
-  const pendingReceivablesCount = receivables.filter(r => r.status === 'Pendiente').length;
+  // Receivables & Payables
+  const pendingReceivables = receivables.filter(r => r.status !== 'Pagado');
+  const totalReceivablesUSD = pendingReceivables.reduce((sum, r) => sum + (r.remainingAmount !== undefined ? Number(r.remainingAmount) : Number(r.amount)), 0);
 
-  const totalPayables = payables
-    .filter(p => p.status === 'Pendiente')
-    .reduce((sum, p) => sum + Number(p.amount), 0);
-
-  const pendingPayablesCount = payables.filter(p => p.status === 'Pendiente').length;
-
-  const netBalance = totalIncome - totalExpense;
-
-  // Chart Data preparation (grouped by date)
-  const dateMap = {};
-  transactions.forEach(t => {
-    if (!dateMap[t.date]) {
-      dateMap[t.date] = { date: t.date, Ingresos: 0, Egresos: 0 };
-    }
-    if (t.type === 'Ingreso') dateMap[t.date].Ingresos += Number(t.amount);
-    if (t.type === 'Egreso') dateMap[t.date].Egresos += Number(t.amount);
-  });
-
-  const chartData = Object.values(dateMap).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-7);
-
-  if (chartData.length === 0) {
-    chartData.push({ date: todayStr, Ingresos: todaySalesUSD, Egresos: 0 });
-  }
+  const pendingPayables = payables.filter(p => p.status !== 'Pagado');
+  const totalPayablesUSD = pendingPayables.reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* 5 Key Metric Cards (KPI Grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard
-          title="Vendido Hoy"
-          amountUsd={todaySalesUSD}
-          bcvRate={bcvRate}
-          icon={CalendarDays}
-          badgeText={`⚡ ${todaySalesCount} venta${todaySalesCount === 1 ? '' : 's'} hoy`}
-          badgeColor="emerald"
-        />
-
-        <MetricCard
-          title="Capital Caja Total"
-          amountUsd={currentCapital}
-          bcvRate={bcvRate}
-          icon={Vault}
-          badgeText="En tiempo real"
-          badgeColor="blue"
-        />
-
-        <MetricCard
-          title="Valor Inventario"
-          amountUsd={inventoryValue}
-          bcvRate={bcvRate}
-          icon={Boxes}
-          badgeText={`${inventory.length} variedades`}
-          badgeColor="emerald"
-        />
-
-        <MetricCard
-          title="Fiados por Cobrar"
-          amountUsd={totalReceivables}
-          bcvRate={bcvRate}
-          icon={BookMarked}
-          badgeText={`${pendingReceivablesCount} pendientes`}
-          badgeColor="amber"
-        />
-
-        <MetricCard
-          title="Deudas por Pagar"
-          amountUsd={totalPayables}
-          bcvRate={bcvRate}
-          icon={Receipt}
-          badgeText={`${pendingPayablesCount} pendientes`}
-          badgeColor="rose"
-        />
-      </div>
-
-      {/* Main Grid: Cashflow Chart & Balance Operativo */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Cashflow Chart (Ingresos vs Egresos) */}
-        <div className="lg:col-span-8 glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-400" /> Flujo de Caja
-              </h3>
-              <p className="text-xs text-slate-400">Ingresos vs Egresos comparativos (Últimos días)</p>
-            </div>
-            <button
-              onClick={() => openModal('pos')}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5"
-            >
-              <ShoppingCart className="w-3.5 h-3.5" /> Vender Ahora
-            </button>
-          </div>
-
-          <div className="h-64 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
-                <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
-                  itemStyle={{ color: '#fff' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }} />
-                <Bar dataKey="Ingresos" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Egresos" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+    <div className="space-y-4 pb-12 animate-fadeIn">
+      {/* 2-Column Metrics Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Vendido Hoy */}
+        <div className="card-panel p-3.5 space-y-1">
+          <span className="text-xs font-semibold text-slate-500 block">Vendido Hoy</span>
+          <div className="text-xl font-extrabold text-[#047857]">{formatUSD(soldTodayUSD)}</div>
+          <div className="text-[11px] font-medium text-slate-400">{formatBs(soldTodayUSD, bcvRate)}</div>
+          <div className="pt-1.5 flex items-center gap-1 text-[11px] font-bold text-[#059669]">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>{salesTodayCount} ventas hoy</span>
           </div>
         </div>
 
-        {/* Balance Operativo */}
-        <div className="lg:col-span-4 glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-            <Scale className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-base font-bold text-white">Balance Operativo</h3>
+        {/* Capital Caja */}
+        <div className="card-panel p-3.5 space-y-1">
+          <span className="text-xs font-semibold text-slate-500 block">Capital Caja</span>
+          <div className={`text-xl font-extrabold ${netBalanceUSD < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+            {formatUSD(netBalanceUSD)}
+          </div>
+          <div className="text-[11px] font-medium text-slate-400">{formatBs(netBalanceUSD, bcvRate)}</div>
+          <div className="pt-1">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+              En tiempo real
+            </span>
+          </div>
+        </div>
+
+        {/* Inventario */}
+        <div className="card-panel p-3.5 space-y-1">
+          <span className="text-xs font-semibold text-slate-500 block">Inventario</span>
+          <div className="text-xl font-extrabold text-slate-800">{formatUSD(inventoryValueUSD)}</div>
+          <div className="text-[11px] font-medium text-slate-500">{totalVarieties} variedades</div>
+          <div className="pt-2">
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-[#059669] h-full rounded-full w-1/3" />
+            </div>
+          </div>
+        </div>
+
+        {/* Fiados */}
+        <div className="card-panel p-3.5 space-y-1">
+          <span className="text-xs font-semibold text-slate-500 block">Fiados</span>
+          <div className="text-xl font-extrabold text-amber-700">{formatUSD(totalReceivablesUSD)}</div>
+          <div className="text-[11px] font-medium text-slate-400">{formatBs(totalReceivablesUSD, bcvRate)}</div>
+          <div className="pt-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100/80 text-amber-800 border border-amber-200">
+              {pendingReceivables.length} pendientes
+            </span>
+          </div>
+        </div>
+
+        {/* Deudas */}
+        <div className="card-panel p-3.5 space-y-1">
+          <span className="text-xs font-semibold text-slate-500 block">Deudas</span>
+          <div className="text-xl font-extrabold text-rose-600">{formatUSD(totalPayablesUSD)}</div>
+          <div className="text-[11px] font-medium text-slate-400">{pendingPayables.length} pendientes</div>
+          <div className="pt-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-700 border border-rose-200">
+              VENCIDO
+            </span>
+          </div>
+        </div>
+
+        {/* Balance */}
+        <div className="card-panel p-3.5 space-y-1">
+          <span className="text-xs font-semibold text-slate-500 block">Balance</span>
+          <div className={`text-xl font-extrabold ${netBalanceUSD < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+            {formatUSD(netBalanceUSD)}
+          </div>
+          <div className="pt-3">
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-rose-500 h-full rounded-full w-2/5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Flujo de Caja Card */}
+      <div className="card-panel p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-extrabold text-slate-900">Flujo de Caja</h3>
+          <BarChart2 className="w-5 h-5 text-slate-700" />
+        </div>
+
+        <div className="py-4 flex items-center justify-around border-t border-b border-slate-100">
+          <div className="text-center space-y-0.5">
+            <span className="text-xs font-bold text-[#047857] block">{formatUSD(totalIncomeUSD)}</span>
+            <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">INGRESOS</span>
+          </div>
+          <div className="text-center space-y-0.5">
+            <span className="text-xs font-bold text-rose-600 block">{formatUSD(totalExpenseUSD)}</span>
+            <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">EGRESOS</span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => openModal('pos')}
+          className="w-full py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all"
+        >
+          <Rocket className="w-4 h-4" /> Vender Ahora
+        </button>
+      </div>
+
+      {/* Balance Operativo Card */}
+      <div className="card-panel p-5 space-y-3">
+        <h3 className="text-base font-extrabold text-slate-900 mb-2">Balance Operativo</h3>
+
+        <div className="space-y-2 divide-y divide-slate-100">
+          {/* Total Ingresos */}
+          <div 
+            onClick={() => openModal('pos')}
+            className="pt-2 flex items-center justify-between cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-[#047857] flex items-center justify-center shrink-0 font-bold">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+              <div>
+                <strong className="text-xs font-bold text-slate-900 block">Total Ingresos</strong>
+                <span className="text-[11px] text-slate-400 font-medium">Hoy</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-extrabold text-[#047857]">{formatUSD(totalIncomeUSD)}</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </div>
           </div>
 
-          <div className="space-y-3 flex-1 flex flex-col justify-center">
-            {/* Total Income */}
-            <div className="bg-slate-900/80 p-3.5 rounded-xl border border-emerald-500/20 space-y-1">
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-400">
-                <span>Total Ingresos</span>
-                <ArrowDownRight className="w-4 h-4 text-emerald-400" />
+          {/* Total Egresos */}
+          <div 
+            onClick={() => openModal('expense')}
+            className="pt-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 font-bold">
+                <ArrowDownRight className="w-5 h-5" />
               </div>
-              <p className="text-xl font-black text-white">{formatUSD(totalIncome)}</p>
-              <small className="text-xs text-slate-400 block font-medium">{formatBs(totalIncome, bcvRate)}</small>
-            </div>
-
-            {/* Total Expense */}
-            <div className="bg-slate-900/80 p-3.5 rounded-xl border border-rose-500/20 space-y-1">
-              <div className="flex items-center justify-between text-xs font-semibold text-rose-400">
-                <span>Total Egresos</span>
-                <ArrowUpRight className="w-4 h-4 text-rose-400" />
-              </div>
-              <p className="text-xl font-black text-white">{formatUSD(totalExpense)}</p>
-              <small className="text-xs text-slate-400 block font-medium">{formatBs(totalExpense, bcvRate)}</small>
-            </div>
-
-            {/* Net Balance */}
-            <div className="bg-gradient-to-r from-emerald-950/60 to-slate-900 p-4 rounded-xl border border-emerald-500/40 flex items-center justify-between mt-2">
               <div>
-                <span className="text-xs font-bold uppercase text-slate-300 block">Balance Neto</span>
-                <strong className="text-2xl font-black text-emerald-400">{formatUSD(netBalance)}</strong>
+                <strong className="text-xs font-bold text-slate-900 block">Total Egresos</strong>
+                <span className="text-[11px] text-slate-400 font-medium">Incluye Mermas</span>
               </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-white block">{formatBs(netBalance, bcvRate)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-extrabold text-rose-600">{formatUSD(totalExpenseUSD)}</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </div>
+          </div>
+
+          {/* Balance Neto */}
+          <div 
+            onClick={() => openModal('dailyClosure')}
+            className="pt-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 font-bold">
+                <Scale className="w-5 h-5" />
               </div>
+              <div>
+                <strong className="text-xs font-bold text-slate-900 block">Balance Neto</strong>
+                <span className="text-[11px] text-slate-400 font-medium">Resultado actual</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className={`text-xs font-extrabold ${netBalanceUSD < 0 ? 'text-slate-900' : 'text-[#047857]'}`}>
+                {formatUSD(netBalanceUSD)}
+              </span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
           </div>
         </div>
