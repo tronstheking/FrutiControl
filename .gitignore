@@ -1,0 +1,19 @@
+# Node / Dependencies
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
+# OS / Temporary Files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# Editor Directories
+.vscode/
+.idea/
+.gemini/
