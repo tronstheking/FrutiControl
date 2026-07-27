@@ -5,9 +5,7 @@ import { auth, onAuthStateChanged } from './firebase/config';
 
 // Layout & Common
 import { Header } from './components/layout/Header';
-import { Sidebar } from './components/layout/Sidebar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
-import { Footer } from './components/layout/Footer';
 import { ToastContainer } from './components/common/Toast';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingSkeleton } from './components/common/LoadingSkeleton';
@@ -27,7 +25,7 @@ import { PayReceivableModal } from './components/receivables/PayReceivableModal'
 import { PayableModal } from './components/payables/PayableModal';
 import { TransactionModal } from './components/cashflow/TransactionModal';
 
-// Code-split pages (Lazy loading)
+// Code-split pages
 const OverviewPage = lazy(() => import('./pages/OverviewPage').then(m => ({ default: m.OverviewPage })));
 const PosPage = lazy(() => import('./pages/PosPage').then(m => ({ default: m.PosPage })));
 const InventoryPage = lazy(() => import('./pages/InventoryPage').then(m => ({ default: m.InventoryPage })));
@@ -42,51 +40,39 @@ export default function App() {
 
   useEffect(() => {
     refreshBcvRate(false);
-
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      }
+      if (currentUser) setUser(currentUser);
     });
-
-    // Cleanup subscription to prevent memory leaks
     return () => unsubscribe();
   }, [setUser, refreshBcvRate]);
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen bg-[#f4f7f4] text-slate-800 font-sans selection:bg-emerald-500 selection:text-white">
-        {/* Auth Overlay */}
+      <div className="min-h-screen bg-[#f5f5f0]">
         <LoginOverlay />
 
-        {/* Sidebar navigation (Desktop) */}
-        <Sidebar />
+        {/* Header — mobile sticky top */}
+        <Header />
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
-          <Header />
+        {/* Main content */}
+        <main className="px-3 pt-3 pb-24 max-w-xl mx-auto">
+          <Suspense fallback={<LoadingSkeleton />}>
+            <Routes>
+              <Route path="/" element={<OverviewPage />} />
+              <Route path="/pos" element={<PosPage />} />
+              <Route path="/inventario" element={<InventoryPage />} />
+              <Route path="/proveedores" element={<SuppliersPage />} />
+              <Route path="/fiados" element={<ReceivablesPage />} />
+              <Route path="/por-pagar" element={<PayablesPage />} />
+              <Route path="/flujo-caja" element={<CashflowPage />} />
+            </Routes>
+          </Suspense>
+        </main>
 
-          <main className="flex-1 p-3 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
-            <Suspense fallback={<LoadingSkeleton />}>
-              <Routes>
-                <Route path="/" element={<OverviewPage />} />
-                <Route path="/pos" element={<PosPage />} />
-                <Route path="/inventario" element={<InventoryPage />} />
-                <Route path="/proveedores" element={<SuppliersPage />} />
-                <Route path="/fiados" element={<ReceivablesPage />} />
-                <Route path="/por-pagar" element={<PayablesPage />} />
-                <Route path="/flujo-caja" element={<CashflowPage />} />
-              </Routes>
-            </Suspense>
-          </main>
-
-          <Footer />
-        </div>
-
-        {/* Mobile Navigation */}
+        {/* Mobile bottom nav */}
         <MobileBottomNav />
 
-        {/* Modals & Toasts Container */}
+        {/* All Modals */}
         <ToastContainer />
         <BcvCalculatorModal />
         <DailyClosureModal />

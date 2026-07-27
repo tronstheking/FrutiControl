@@ -1,17 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useStore } from '../../store/useStore';
-import { 
-  Menu, 
-  RotateCw, 
-  MoreVertical, 
-  PlusCircle, 
-  MinusCircle, 
-  Lock, 
-  TrendingUp,
-  Building2,
-  Calculator,
-  LogOut
-} from 'lucide-react';
+import { RotateCw, Building2, TrendingUp, Menu, X, PlusCircle, MinusCircle, Lock, Calculator, LogOut } from 'lucide-react';
 import { auth, signOut } from '../../firebase/config';
 import { MobileDrawer } from './MobileDrawer';
 
@@ -26,112 +15,105 @@ export const Header = React.memo(() => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = useCallback(async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {}
+    try { await signOut(auth); } catch (e) {}
     setUser(null);
+    setMenuOpen(false);
   }, [setUser]);
-
-  const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
 
   return (
     <>
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 space-y-3 shadow-xs">
-        {/* Top Navbar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-              title="Menú Principal"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="p-2 -ml-2 rounded-xl text-gray-600 active:bg-gray-100"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-            <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
-                FrutiControl VE
-              </h1>
-              <p className="text-[11px] font-medium text-slate-500">POS & Gestión Frutícola</p>
-            </div>
+          <div className="text-center">
+            <p className="text-[13px] font-bold text-gray-900 leading-none">FrutiControl VE</p>
+            <p className="text-[10px] text-gray-500 font-medium">Gestión de Frutas</p>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="relative">
             <button
-              onClick={() => refreshBcvRate(true)}
-              title="Actualizar Tasa BCV"
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              onClick={() => setMenuOpen(v => !v)}
+              className="p-2 -mr-2 rounded-xl text-gray-600 active:bg-gray-100"
             >
-              <RotateCw className={`w-4 h-4 ${bcvLoading ? 'spin-anim text-emerald-600' : ''}`} />
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 rotate-90" />}
             </button>
 
-            <div className="relative">
-              <button
-                onClick={() => setMenuOpen(prev => !prev)}
-                className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
-
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50 animate-fadeIn text-xs font-medium">
-                  <button
-                    onClick={() => { setMenuOpen(false); openModal('bcvCalc'); }}
-                    className="w-full px-4 py-2.5 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                  >
-                    <Calculator className="w-4 h-4 text-emerald-600" /> Calculadora BCV
-                  </button>
-                  <button
-                    onClick={() => { setMenuOpen(false); handleLogout(); }}
-                    className="w-full px-4 py-2.5 text-left text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
-                  >
-                    <LogOut className="w-4 h-4" /> Cerrar Sesión
-                  </button>
-                </div>
-              )}
-            </div>
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-200 py-1 z-50 text-sm font-medium">
+                <button
+                  onClick={() => { setMenuOpen(false); openModal('bcvCalc'); }}
+                  className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                >
+                  <Calculator className="w-4 h-4 text-emerald-600" /> Calculadora BCV
+                </button>
+                <div className="border-t border-gray-100 mx-2" />
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3"
+                >
+                  <LogOut className="w-4 h-4" /> Cerrar Sesión
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* BCV Green Banner */}
-        <div
+        {/* BCV Rate Banner */}
+        <button
           onClick={() => openModal('bcvCalc')}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl flex items-center justify-between font-semibold text-xs shadow-xs cursor-pointer transition-colors"
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-emerald-600 active:bg-emerald-700 text-white transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-emerald-200 shrink-0" />
-            <span>Tasa Oficial BCV: <strong className="font-bold">{bcvRate.toFixed(2)} Bs./$</strong></span>
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <Building2 className="w-4 h-4 text-emerald-200" />
+            <span>Tasa BCV Oficial: <strong className="font-bold text-white">{bcvRate.toFixed(2)} Bs/$</strong></span>
           </div>
-          <TrendingUp className="w-4 h-4 text-emerald-200 shrink-0" />
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); refreshBcvRate(true); }}
+              className="p-1 rounded-lg text-emerald-200 active:bg-emerald-500"
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${bcvLoading ? 'spin-anim' : ''}`} />
+            </button>
+            <TrendingUp className="w-4 h-4 text-emerald-200" />
+          </div>
+        </button>
 
-        {/* Quick Actions Row */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5 text-xs">
+        {/* Quick actions row */}
+        <div className="flex gap-2 px-3 py-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => openModal('pos')}
-            className="btn-primary shrink-0"
+            className="flex-shrink-0 flex items-center gap-1.5 bg-emerald-600 active:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-colors"
           >
-            <PlusCircle className="w-4 h-4" /> + POS Venta
+            <PlusCircle className="w-4 h-4" />
+            <span>+ Venta</span>
           </button>
 
           <button
             onClick={() => openModal('expense')}
-            className="btn-secondary shrink-0"
+            className="flex-shrink-0 flex items-center gap-1.5 bg-red-50 active:bg-red-100 text-red-600 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-red-100 transition-colors"
           >
-            <MinusCircle className="w-4 h-4 text-rose-500" /> Anotar Gasto
+            <MinusCircle className="w-4 h-4" />
+            <span>Gasto</span>
           </button>
 
           <button
             onClick={() => openModal('dailyClosure')}
-            className="btn-secondary shrink-0"
+            className="flex-shrink-0 flex items-center gap-1.5 bg-gray-100 active:bg-gray-200 text-gray-700 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-gray-200 transition-colors"
           >
-            <Lock className="w-4 h-4 text-slate-500" /> Cerrar Día
+            <Lock className="w-4 h-4" />
+            <span>Cerrar Día</span>
           </button>
         </div>
       </header>
 
-      {/* Slide Drawer */}
-      <MobileDrawer isOpen={drawerOpen} onClose={handleCloseDrawer} />
+      <MobileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   );
 });
