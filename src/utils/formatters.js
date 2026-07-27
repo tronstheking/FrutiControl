@@ -31,12 +31,17 @@ export const formatDate = (dateStr) => {
 
 export const getFruitEmoji = (name = "") => {
   const n = name.toLowerCase();
+  // Bags / Sacos
+  if (n.includes("bolsa") || n.includes("saco")) return "🛍️";
+  // Containers / Tobos / Cajas / Empaques
+  if (n.includes("envase") || n.includes("tobo") || n.includes("caja") || n.includes("frasco") || n.includes("pote") || n.includes("empaque")) return "🫙";
+  // Fruits
   if (n.includes("cambur") || n.includes("banano")) return "🍌";
   if (n.includes("parchita") || n.includes("maracuyá")) return "🍈";
   if (n.includes("patilla") || n.includes("sandía")) return "🍉";
   if (n.includes("aguacate")) return "🥑";
   if (n.includes("fresa") || n.includes("frutilla")) return "🍓";
-  if (n.includes("naranja")) return "🍊";
+  if (n.includes("naranja") || n.includes("mandarina")) return "🍊";
   if (n.includes("mango")) return "🥭";
   if (n.includes("lechosa") || n.includes("papaya")) return "🍈";
   if (n.includes("limon") || n.includes("limón")) return "🍋";
@@ -45,5 +50,9 @@ export const getFruitEmoji = (name = "") => {
   if (n.includes("manzana")) return "🍎";
   if (n.includes("pera")) return "🍐";
   if (n.includes("durazno") || n.includes("melocotón")) return "🍑";
+  if (n.includes("coco")) return "🥥";
+  if (n.includes("melón") || n.includes("melon")) return "🍈";
+  if (n.includes("ciruela") || n.includes("cereza")) return "🍒";
+  if (n.includes("guayaba")) return "🍎";
   return "🍎";
 };

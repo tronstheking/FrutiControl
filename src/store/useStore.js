@@ -7,12 +7,12 @@ const STORAGE_KEY = "freshcontrol_ve_db_v1";
 const defaultData = {
   capitalInicial: 0,
   inventory: [
-    { id: 101, name: "Manzana Gala", kg: 45, priceKg: 2.50, costKg: 1.50, image: "/fruits/manzana_gala.png", supplier: "Frutícola Los Andes" },
-    { id: 102, name: "Naranja Val.", kg: 12, priceKg: 1.20, costKg: 0.70, image: "/fruits/naranja_val.png", supplier: "Comercializadora Barquisimeto" },
-    { id: 103, name: "Cambur Banano", kg: 80, priceKg: 0.80, costKg: 0.45, image: "/fruits/cambur_banano.png", supplier: "Mayorista Mercado de Coche" },
-    { id: 104, name: "Mango Tommy", kg: 3, priceKg: 1.50, costKg: 0.90, image: "/fruits/mango_tommy.png", supplier: "Mayorista Mercado de Coche" },
-    { id: 105, name: "Lechoza", kg: 15, priceKg: 0.95, costKg: 0.55, image: "/fruits/lechoza.png", supplier: "Distribuidora La Guaira" },
-    { id: 106, name: "Aguacate Hass", kg: 25, priceKg: 3.00, costKg: 1.80, image: "/fruits/aguacate_hass.png", supplier: "Frutícola Los Andes" }
+    { id: 101, name: "Manzana Gala", kg: 45, priceKg: 2.50, costKg: 1.50, image: null, supplier: "Frutícola Los Andes" },
+    { id: 102, name: "Naranja Val.", kg: 12, priceKg: 1.20, costKg: 0.70, image: null, supplier: "Comercializadora Barquisimeto" },
+    { id: 103, name: "Cambur Banano", kg: 80, priceKg: 0.80, costKg: 0.45, image: null, supplier: "Mayorista Mercado de Coche" },
+    { id: 104, name: "Mango Tommy", kg: 3, priceKg: 1.50, costKg: 0.90, image: null, supplier: "Mayorista Mercado de Coche" },
+    { id: 105, name: "Lechoza", kg: 15, priceKg: 0.95, costKg: 0.55, image: null, supplier: "Distribuidora La Guaira" },
+    { id: 106, name: "Aguacate Hass", kg: 25, priceKg: 3.00, costKg: 1.80, image: null, supplier: "Frutícola Los Andes" }
   ],
   suppliers: [
     { id: 1, name: "Frutícola Los Andes", fruit: "Fresas, Parchitas, Aguacate", phone: "+58 412 5550199", location: "Mérida / Colonia Tovar" },
@@ -29,9 +29,19 @@ const loadInitialState = () => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
+      const cleanInventory = Array.isArray(parsed.inventory)
+        ? parsed.inventory.map(item => {
+            // Remove legacy sample /fruits/ image paths or unsplash links so user can set custom or see clean icons
+            if (item.image && (item.image.startsWith('/fruits/') || item.image.includes('unsplash'))) {
+              return { ...item, image: null };
+            }
+            return item;
+          })
+        : defaultData.inventory;
+
       return {
         capitalInicial: Number(parsed.capitalInicial) || 0,
-        inventory: Array.isArray(parsed.inventory) ? parsed.inventory : defaultData.inventory,
+        inventory: cleanInventory,
         suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : defaultData.suppliers,
         receivables: Array.isArray(parsed.receivables) ? parsed.receivables : [],
         payables: Array.isArray(parsed.payables) ? parsed.payables : [],

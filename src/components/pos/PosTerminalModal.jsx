@@ -97,7 +97,11 @@ export const PosTerminalModal = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-2xl">{emoji}</span>
+                    {fruit.image ? (
+                      <img src={fruit.image} alt={fruit.name} className="w-8 h-8 object-cover rounded-lg shrink-0" />
+                    ) : (
+                      <span className="text-2xl">{emoji}</span>
+                    )}
                     <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
                       <Plus className="w-3.5 h-3.5" />
                     </span>

@@ -101,10 +101,17 @@ export const InventoryPage = React.memo(() => {
               <div key={item.id} className="list-row gap-3">
                 {/* Left: emoji + info */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-2xl shrink-0 border border-gray-100">
+                  <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-2xl shrink-0 border border-gray-100 overflow-hidden">
                     {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-xl" loading="lazy" />
-                    ) : emoji}
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover rounded-xl"
+                        loading="lazy"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'block'); }}
+                      />
+                    ) : null}
+                    <span style={{ display: item.image ? 'none' : 'block' }}>{emoji}</span>
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate">{item.name}</p>
