@@ -187,15 +187,33 @@ export const useStore = create((set, get) => {
     clearPosCart: () => set({ posCart: [] }),
 
     // Inventory Actions
-    addFruit: (fruitData) => {
+    addFruit: (fruitData, logAsExpense = false) => {
       set(state => {
         const newFruit = { id: Date.now(), ...fruitData };
         const updatedInventory = [...state.inventory, newFruit];
-        const newState = { ...state, inventory: updatedInventory };
+        
+        let updatedTransactions = state.transactions;
+        const totalCostUSD = (Number(fruitData.kg) || 0) * (Number(fruitData.costKg) || 0);
+
+        if (logAsExpense && totalCostUSD > 0) {
+          const today = new Date().toISOString().split("T")[0];
+          updatedTransactions = [
+            ...state.transactions,
+            {
+              id: Date.now(),
+              date: today,
+              description: `Compra Mercancía / Lote (${fruitData.kg}kg ${fruitData.name})`,
+              type: "Egreso",
+              amount: totalCostUSD
+            }
+          ];
+        }
+
+        const newState = { ...state, inventory: updatedInventory, transactions: updatedTransactions };
         syncState(newState);
-        return { inventory: updatedInventory };
+        return { inventory: updatedInventory, transactions: updatedTransactions };
       });
-      get().addToast("🍎 Fruta añadida al inventario.", "success");
+      get().addToast("🍎 Producto añadido al inventario.", "success");
     },
 
     editFruit: (id, fruitData) => {

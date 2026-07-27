@@ -16,6 +16,7 @@ export const FruitModal = () => {
   const [costKg, setCostKg] = useState('');
   const [supplier, setSupplier] = useState('');
   const [image, setImage] = useState(null);
+  const [logAsExpense, setLogAsExpense] = useState(true);
 
   const isOpen = activeModal === 'fruit';
 
@@ -27,8 +28,10 @@ export const FruitModal = () => {
       setCostKg(modalData.costKg !== undefined ? modalData.costKg : '');
       setSupplier(modalData.supplier || '');
       setImage(modalData.image || null);
+      setLogAsExpense(false);
     } else {
       setName(''); setKg(''); setPriceKg(''); setCostKg(''); setSupplier(''); setImage(null);
+      setLogAsExpense(true);
     }
   }, [modalData, isOpen]);
 
@@ -37,6 +40,7 @@ export const FruitModal = () => {
   const parsedKg = parseFloat(kg) || 0;
   const parsedPrice = parseFloat(priceKg) || 0;
   const parsedCost = parseFloat(costKg) || 0;
+  const totalCostUSD = parsedKg * parsedCost;
   const totalValUSD = parsedKg * parsedPrice;
   const margin = parsedCost > 0 ? (((parsedPrice - parsedCost) / parsedCost) * 100).toFixed(0) : 0;
   const currentEmoji = getFruitEmoji(name);
@@ -65,7 +69,7 @@ export const FruitModal = () => {
     if (modalData && modalData.id) {
       editFruit(modalData.id, data);
     } else {
-      addFruit(data);
+      addFruit(data, logAsExpense);
     }
     closeModal();
   };
@@ -166,6 +170,20 @@ export const FruitModal = () => {
             ))}
           </select>
         </div>
+
+        {!modalData && parsedCost > 0 && parsedKg > 0 && (
+          <label className="flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer">
+            <input
+              type="checkbox"
+              checked={logAsExpense}
+              onChange={(e) => setLogAsExpense(e.target.checked)}
+              className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 accent-emerald-600 shrink-0"
+            />
+            <span className="text-xs font-semibold text-amber-900 leading-tight">
+              Registrar pago de compra en Flujo de Caja (Egreso: {formatUSD(totalCostUSD)})
+            </span>
+          </label>
+        )}
 
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={closeModal}
