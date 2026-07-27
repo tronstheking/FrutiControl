@@ -4,10 +4,23 @@
   <meta charset="UTF-8">
   <title>FrutiControl VE - Redireccionando...</title>
   <script>
-    // Redirect to GitHub Pages root app
-    var repoPath = window.location.pathname.split('/')[1] || '';
-    var redirectUrl = window.location.origin + (repoPath ? '/' + repoPath + '/' : '/');
-    window.location.replace(redirectUrl);
+    // Unregister any active Service Worker to prevent caching stale main.jsx
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+    // Always redirect to FrutiControl root with hash route preserved
+    var hash = window.location.hash || '';
+    var targetUrl = window.location.origin + '/FrutiControl/' + hash;
+    window.location.replace(targetUrl);
   </script>
 </head>
 <body style="background:#059669; color:white; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
