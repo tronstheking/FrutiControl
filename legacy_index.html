@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#16A34A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Sistema POS de Ventas Frutícolas en Venezuela con Carrito Multi-Producto, Métodos de Pago y Calculadora de Vueltos">
+  <title>FrutiControl VE - POS Avanzado & Gestión Frutícola BCV</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation (Desktop) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-lemon"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">FrutiControl <small class="flag-ve">🇻🇪</small></span>
+          <span class="brand-subtitle">POS & Gestión VE</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-item active" data-section="overview">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Resumen General</span>
+        </a>
+        <a href="#pos-full" class="nav-item" data-section="pos-full">
+          <i class="fa-solid fa-cash-register"></i>
+          <span>Punto de Venta POS</span>
+        </a>
+        <a href="#inventory" class="nav-item" data-section="inventory">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <span>Inventario</span>
+        </a>
+        <a href="#suppliers" class="nav-item" data-section="suppliers">
+          <i class="fa-solid fa-truck-field"></i>
+          <span>Proveedores</span>
+        </a>
+        <a href="#receivables" class="nav-item" data-section="receivables">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+          <span>Por Cobrar</span>
+        </a>
+        <a href="#payables" class="nav-item" data-section="payables">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+          <span>Por Pagar</span>
+        </a>
+        <a href="#cashflow" class="nav-item" data-section="cashflow">
+          <i class="fa-solid fa-arrow-trend-up"></i>
+          <span>Flujo de Caja</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-primary btn-block" onclick="openQuickSaleModal()" style="width: 100%;">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span>Nueva Venta Rápida</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Header -->
+      <!-- Top Header (Ultra-Modern Minimalist Executive Header) -->
+      <header class="top-header">
+        <div class="header-main-bar">
+          <div class="header-brand">
+            <div class="brand-icon-box"><i class="fa-solid fa-lemon"></i></div>
+            <div class="brand-title-wrap">
+              <h2>FrutiControl <span class="flag-pill">VE</span></h2>
+              <p class="brand-sub">Sistema POS & Gestión Frutícola</p>
+            </div>
+          </div>
+
+          <div class="header-top-utils">
+            <!-- Compact BCV Pill Badge -->
+            <div class="bcv-pill-badge" onclick="fetchBcvRate(true)" title="Tasa Oficial BCV - Toca para actualizar">
+              <i class="fa-solid fa-building-columns bcv-icon-main"></i>
+              <div class="bcv-pill-info">
+                <span class="bcv-pill-label">BCV Hoy</span>
+                <span class="bcv-pill-rate" id="bcv-rate-display">...</span>
+              </div>
+              <i class="fa-solid fa-arrows-rotate spin-icon" id="bcv-spin-icon"></i>
+            </div>
+
+            <!-- Utility Buttons -->
+            <button class="header-icon-btn" onclick="openBcvCalcModal()" title="Calculadora BCV">
+              <i class="fa-solid fa-calculator"></i>
+            </button>
+            <button class="header-icon-btn" onclick="resetToDefaultData()" title="Restablecer Datos">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button class="header-icon-btn" onclick="handleFirebaseLogout()" title="Cerrar Sesión">
+              <i class="fa-solid fa-right-from-bracket" style="color:var(--ruby-red);"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Action Bar (4 Symmetrical Modern Pills) -->
+        <div class="header-quick-actions">
+          <button class="action-pill pos-pill" onclick="openQuickSaleModal()">
+            <i class="fa-solid fa-cash-register"></i>
+            <span>+ POS Venta</span>
+          </button>
+          <button class="action-pill expense-pill" onclick="openQuickExpenseModal()">
+            <i class="fa-solid fa-minus-circle"></i>
+            <span>- Anotar Gasto</span>
+          </button>
+          <button class="action-pill closure-pill" onclick="generateDailyClosureReport()">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span>Cerrar Día</span>
+          </button>
+          <button class="action-pill waste-pill" onclick="openWasteModal()">
+            <i class="fa-solid fa-apple-whole"></i>
+            <span>- Merma</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- SECCIÓN 1: RESUMEN GENERAL (Overview) -->
+      <section class="app-section active" id="sec-overview">
+        <div class="kpi-grid">
+          
+          <div class="kpi-card today-sales">
+            <div class="kpi-icon-wrapper"><i class="fa-solid fa-calendar-day"></i></div>
+            <div class="kpi-details">
+              <span class="kpi-label">Vendido Hoy (Día)</span>
+              <h2 class="kpi-value" id="kpi-today-sales">$0.00</h2>
+              <span class="bs-value" id="kpi-today-sales-bs">0,00 Bs.</span>
+              <span class="kpi-badge positive" id="kpi-today-sales-count"><i class="fa-solid fa-bolt"></i> 0 ventas hoy</span>
+            </div>
+          </div>
+
+          <div class="kpi-card primary">
+            <div class="kpi-icon-wrapper"><i class="fa-solid fa-vault"></i></div>
+            <div class="kpi-details">
+              <span class="kpi-label">Capital Caja Total</span>
+              <h2 class="kpi-value" id="kpi-capital">$0.00</h2>
+              <span class="bs-value" id="kpi-capital-bs">0,00 Bs.</span>
+              <span class="kpi-badge positive"><i class="fa-solid fa-circle-check"></i> En tiempo real</span>
+            </div>
+          </div>
+
+          <div class="kpi-card emerald">
+            <div class="kpi-icon-wrapper"><i class="fa-solid fa-apple-whole"></i></div>
+            <div class="kpi-details">
+              <span class="kpi-label">Valor Inventario</span>
+              <h2 class="kpi-value" id="kpi-inventory">$0.00</h2>
+              <span class="bs-value" id="kpi-inventory-bs">0,00 Bs.</span>
+              <span class="kpi-badge neutral" id="kpi-inventory-count">0 frutas</span>
+            </div>
+          </div>
+
+          <div class="kpi-card warning">
+            <div class="kpi-icon-wrapper"><i class="fa-solid fa-book-bookmark"></i></div>
+            <div class="kpi-details">
+              <span class="kpi-label">Fiados (Por Cobrar)</span>
+              <h2 class="kpi-value" id="kpi-receivables">$0.00</h2>
+              <span class="bs-value" id="kpi-receivables-bs">0,00 Bs.</span>
+              <span class="kpi-badge warning-badge" id="kpi-receivables-count">0 pendientes</span>
+            </div>
+          </div>
+
+          <div class="kpi-card danger">
+            <div class="kpi-icon-wrapper"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+            <div class="kpi-details">
+              <span class="kpi-label">Deudas por Pagar</span>
+              <h2 class="kpi-value" id="kpi-payables">$0.00</h2>
+              <span class="bs-value" id="kpi-payables-bs">0,00 Bs.</span>
+              <span class="kpi-badge danger-badge" id="kpi-payables-count">0 pendientes</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="grid-2-1" style="margin-top: 1.25rem;">
+          <div class="card chart-card">
+            <div class="card-header flex-between">
+              <div class="card-title-group">
+                <h3><i class="fa-solid fa-chart-column"></i> Flujo de Caja</h3>
+                <p>Ingresos vs Egresos comparativos</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openQuickSaleModal()">
+                <i class="fa-solid fa-cart-shopping"></i> Vender Ahora
+              </button>
+            </div>
+            <div class="card-body chart-body">
+              <canvas id="mainCashflowChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card stats-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-scale-balanced"></i> Balance Operativo</h3>
+            </div>
+            <div class="card-body mini-stats-body">
+              <div class="mini-stat-item income">
+                <div class="stat-header">
+                  <span>Total Ingresos</span>
+                  <i class="fa-solid fa-arrow-down-long"></i>
+                </div>
+                <h3 class="stat-amount" id="stat-total-income">$0.00</h3>
+                <small class="stat-bs" id="stat-total-income-bs">0,00 Bs.</small>
+              </div>
+
+              <div class="mini-stat-item expense">
+                <div class="stat-header">
+                  <span>Total Egresos</span>
+                  <i class="fa-solid fa-arrow-up-long"></i>
+                </div>
+                <h3 class="stat-amount" id="stat-total-expense">$0.00</h3>
+                <small class="stat-bs" id="stat-total-expense-bs">0,00 Bs.</small>
+              </div>
+
+              <div class="net-profit-box">
+                <div>
+                  <span style="display:block; font-size: 0.8rem;">Balance Neto</span>
+                  <strong id="stat-net-balance" style="font-size: 1.15rem;">$0.00</strong>
+                </div>
+                <div style="text-align: right;">
+                  <span id="stat-net-balance-bs" style="font-weight: 700; font-size: 0.9rem; color: #15803D;">0,00 Bs.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN POS COMPLETO -->
+      <section class="app-section" id="sec-pos-full">
+        <div class="card">
+          <div class="card-header flex-between">
+            <div class="card-title-group">
+              <h3><i class="fa-solid fa-cash-register"></i> Terminal POS de Ventas</h3>
+              <p>Selecciona un producto del catálogo para abrir la caja registradora</p>
+            </div>
+            <button class="btn btn-primary" onclick="openQuickSaleModal()">
+              <i class="fa-solid fa-cart-shopping"></i> Nueva Venta
+            </button>
+          </div>
+          <div class="card-body" style="padding: 1rem;">
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 600;">
+              <i class="fa-solid fa-hand-pointer"></i> Toca cualquier fruta para abrir el POS completo:
+            </p>
+            <div class="pos-inline-grid">
+              <div class="pos-fruit-touch-area" id="pos-inline-fruit-grid">
+                <!-- Fruit Touch Grid -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2: INVENTARIO -->
+      <section class="app-section" id="sec-inventory">
+        <div class="card">
+          <div class="card-header flex-between flex-wrap-mobile">
+            <div class="card-title-group">
+              <h3><i class="fa-solid fa-boxes-stacked"></i> Stock de Frutas & Márgenes</h3>
+              <p>Control de kilos, márgenes de ganancia y re-surtido de mercancía</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary" onclick="openWasteModal()">
+                <i class="fa-solid fa-trash-can" style="color:var(--ruby-red);"></i> Registrar Merma
+              </button>
+              <button class="btn btn-primary" onclick="openFruitModal()">
+                <i class="fa-solid fa-plus"></i> Nueva Fruta
+              </button>
+            </div>
+          </div>
+
+          <!-- Summary Bar: Inversión vs Venta vs Ganancia -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border-color); background: #FAFAFA;">
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); padding:0.65rem 0.85rem; border-radius:var(--border-radius-sm);">
+              <small style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">📦 Inversión (A Costo)</small>
+              <div style="font-size:1.15rem; font-weight:900; color:var(--navy-dark);" id="inv-total-cost">$0.00</div>
+              <span style="font-size:0.7rem; color:var(--text-muted);" id="inv-total-cost-bs">0,00 Bs.</span>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); padding:0.65rem 0.85rem; border-radius:var(--border-radius-sm);">
+              <small style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">💵 Valor Venta Esperado</small>
+              <div style="font-size:1.15rem; font-weight:900; color:var(--emerald-dark);" id="inv-total-sales">$0.00</div>
+              <span style="font-size:0.7rem; color:var(--text-muted);" id="inv-total-sales-bs">0,00 Bs.</span>
+            </div>
+
+            <div style="background:var(--emerald-light); border:1px solid #A7F3D0; padding:0.65rem 0.85rem; border-radius:var(--border-radius-sm);">
+              <small style="font-size:0.65rem; font-weight:800; color:var(--emerald-dark); text-transform:uppercase;">🟢 Ganancia Potencial</small>
+              <div style="font-size:1.15rem; font-weight:900; color:var(--navy-dark);" id="inv-potential-profit">$0.00</div>
+              <span style="font-size:0.7rem; color:var(--emerald-dark); font-weight:800;" id="inv-potential-margin">+0% Margen Prom.</span>
+            </div>
+          </div>
+
+          <div class="search-filter-bar">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="inventory-search" placeholder="Buscar fruta..." oninput="renderInventoryTable()">
+          </div>
+          <div class="card-body table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fruta</th>
+                  <th>Stock (kg)</th>
+                  <th>Precio Venta vs Costo</th>
+                  <th>Margen Ganancia</th>
+                  <th>Valor Venta ($ y Bs.)</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 3: PROVEEDORES -->
+      <section class="app-section" id="sec-suppliers">
+        <div class="card">
+          <div class="card-header flex-between flex-wrap-mobile">
+            <div class="card-title-group">
+              <h3><i class="fa-solid fa-truck-field"></i> Proveedores</h3>
+              <p>Directorio de mayoristas</p>
+            </div>
+            <button class="btn btn-primary" onclick="openSupplierModal()">
+              <i class="fa-solid fa-plus"></i> Agregar Proveedor
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="suppliers-grid" id="suppliers-grid-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 4: CUADERNO DIGITAL DE FIADOS -->
+      <section class="app-section" id="sec-receivables">
+        <div class="card">
+          <div class="card-header flex-between flex-wrap-mobile">
+            <div class="card-title-group">
+              <h3><i class="fa-solid fa-book-bookmark" style="color:var(--amber-gold);"></i> 📓 Cuaderno Digital de Fiados</h3>
+              <p>Reemplaza la libreta: deudas en $ USD que <strong>se recalculan automáticamente en Bolívares (Bs.) todos los días</strong> a la tasa BCV del momento.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openReceivableModal()">
+              <i class="fa-solid fa-plus"></i> Anotar Fiado
+            </button>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Concepto / Fruta</th>
+                  <th>Monto ($ y Bs.)</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="receivables-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 5: CUENTAS POR PAGAR -->
+      <section class="app-section" id="sec-payables">
+        <div class="card">
+          <div class="card-header flex-between flex-wrap-mobile">
+            <div class="card-title-group">
+              <h3><i class="fa-solid fa-file-invoice-dollar"></i> Cuentas por Pagar</h3>
+              <p>Deudas con proveedores</p>
+            </div>
+            <button class="btn btn-primary" onclick="openPayableModal()">
+              <i class="fa-solid fa-plus"></i> Registrar Deuda
+            </button>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  <th>Concepto</th>
+                  <th>Monto ($ y Bs.)</th>
+                  <th>Fecha Pago</th>
+                  <th>Estado</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="payables-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 6: FLUJO DE CAJA -->
+      <section class="app-section" id="sec-cashflow">
+        <div class="card">
+          <div class="card-header flex-between flex-wrap-mobile">
+            <div class="card-title-group">
+              <h3><i class="fa-solid fa-money-bill-transfer"></i> Movimientos de Caja</h3>
+              <p>Histórico completo de ventas, cobros y gastos</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-primary" onclick="openQuickSaleModal()">
+                <i class="fa-solid fa-cart-shopping"></i> Vender
+              </button>
+              <button class="btn btn-danger" onclick="openTransactionModal('Egreso')">
+                <i class="fa-solid fa-minus"></i> Egreso
+              </button>
+            </div>
+          </div>
+
+          <!-- Barra de Filtros (Búsqueda + Tipo + Fecha) -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border-color); background: #FAFAFA;">
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;">
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 220px;">
+                <div class="search-filter-bar" style="margin-bottom: 0; width: 100%;">
+                  <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                  <input type="text" id="cashflow-search" placeholder="Buscar por concepto, cliente o gasto..." oninput="renderCashflowTable()">
+                </div>
+              </div>
+
+              <!-- Filtro de Tipo (Ingreso / Egreso / Todos) -->
+              <div style="display: flex; gap: 0.35rem; align-items: center;">
+                <button class="btn btn-secondary filter-cf-btn active" id="cf-btn-all" onclick="setCashflowFilter('Todos')" style="font-size:0.775rem; padding:0.4rem 0.75rem; font-weight:700;">
+                  📋 Todos
+                </button>
+                <button class="btn btn-secondary filter-cf-btn" id="cf-btn-ingreso" onclick="setCashflowFilter('Ingreso')" style="font-size:0.775rem; padding:0.4rem 0.75rem; color:var(--emerald-dark); font-weight:700;">
+                  🟢 Ingresos
+                </button>
+                <button class="btn btn-secondary filter-cf-btn" id="cf-btn-egreso" onclick="setCashflowFilter('Egreso')" style="font-size:0.775rem; padding:0.4rem 0.75rem; color:var(--ruby-red); font-weight:700;">
+                  🔴 Egresos
+                </button>
+              </div>
+            </div>
+
+            <!-- Filtro por Rango de Fecha -->
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; font-size: 0.775rem; border-top: 1px dashed #E2E8F0; padding-top: 0.5rem;">
+              <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                <span style="font-weight: 800; color: var(--navy-dark); text-transform: uppercase; font-size: 0.675rem;"><i class="fa-regular fa-calendar-days"></i> Filtrar Fecha:</span>
+                <button type="button" class="preset-chip" onclick="setCashflowDatePreset('hoy')" style="padding:0.25rem 0.6rem; font-size:0.725rem;">📅 Hoy</button>
+                <button type="button" class="preset-chip" onclick="setCashflowDatePreset('mes')" style="padding:0.25rem 0.6rem; font-size:0.725rem;">🗓️ Este Mes</button>
+                <button type="button" class="preset-chip" onclick="setCashflowDatePreset('todo')" style="padding:0.25rem 0.6rem; font-size:0.725rem;">♾️ Histórico Todo</button>
+              </div>
+
+              <div style="display: flex; gap: 0.35rem; align-items: center;">
+                <input type="date" id="cf-date-from" onchange="renderCashflowTable()" style="font-size:0.75rem; padding:0.25rem 0.4rem; border:1px solid var(--border-color); border-radius:4px; font-weight:700;">
+                <span style="color:var(--text-muted);">hasta</span>
+                <input type="date" id="cf-date-to" onchange="renderCashflowTable()" style="font-size:0.75rem; padding:0.25rem 0.4rem; border:1px solid var(--border-color); border-radius:4px; font-weight:700;">
+                <button type="button" class="btn btn-secondary" onclick="clearCashflowDates()" style="font-size:0.7rem; padding:0.25rem 0.5rem;" title="Limpiar fechas"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="card-body table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Descripción</th>
+                  <th>Tipo</th>
+                  <th>Monto ($ y Bs.)</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="cashflow-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="main-footer">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <i class="fa-solid fa-lemon"></i>
+            <span>FrutiControl VE</span>
+          </div>
+          <p class="footer-text">© 2026 Carrito Multi-Producto, Pago Móvil, Zelle & BCV.</p>
+          <div class="footer-status-pill">
+            <span class="pulse-dot"></span>
+            <span>Sistema POS En Línea</span>
+          </div>
+        </div>
+      </footer>
+
+    </main>
+
+    <!-- Floating Action Button (FAB) -->
+    <button class="mobile-fab" onclick="openQuickSaleModal()" title="Nueva Venta POS">
+      <i class="fa-solid fa-cash-register"></i>
+      <span>POS Venta</span>
+    </button>
+
+    <!-- Navigation Bar en móviles -->
+    <nav class="mobile-bottom-nav">
+      <a href="#overview" class="mobile-nav-item active" data-section="overview">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Inicio</span>
+      </a>
+      <a href="#inventory" class="mobile-nav-item" data-section="inventory">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Stock</span>
+      </a>
+      <a href="#" class="mobile-nav-item pos-tab" onclick="openQuickSaleModal(); return false;">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span>POS</span>
+      </a>
+      <a href="#receivables" class="mobile-nav-item" data-section="receivables">
+        <i class="fa-solid fa-hand-holding-dollar"></i>
+        <span>Cobrar</span>
+      </a>
+      <a href="#cashflow" class="mobile-nav-item" data-section="cashflow">
+        <i class="fa-solid fa-arrow-trend-up"></i>
+        <span>Flujo</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- MODAL DE FORMULARIOS & RECIBOS -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-box" id="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-title">Título del Formulario</h3>
+        <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Inyectado dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- LOGIN OVERLAY CON FIREBASE AUTH -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-brand-logo">
+          <i class="fa-solid fa-lemon"></i>
+        </div>
+        <h2>FrutiControl <span class="flag-pill">VE</span></h2>
+        <p>Sistema POS & Gestión Frutícola BCV</p>
+      </div>
+
+      <form id="login-form" onsubmit="handleFirebaseLogin(event)">
+        <div id="login-error-alert" class="login-error-alert" style="display: none;"></div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-envelope"></i> Correo Electrónico</label>
+          <input type="email" id="login-email" placeholder="usuario@fruticontrol.com" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-key"></i> Contraseña</label>
+          <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block login-btn" id="login-submit-btn">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span id="login-btn-text">Iniciar Sesión</span>
+        </button>
+
+        <div id="login-demo-notice" style="margin-top: 1rem; font-size: 0.725rem; color: var(--text-muted); text-align: center; display: none;">
+          ⚡ <em>Modo Local: Registra tus llaves en firebase-config.js para conectar con Firebase Console.</em>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase Auth & Firestore CDN (v10 compat SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase Config local -->
+  <script src="firebase-config.js"></script>
+  <!-- Script Principal -->
+  <script src="script.js"></script>
+</body>
+</html>

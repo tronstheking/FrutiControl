@@ -2,6 +2,11 @@
 node_modules/
 npm-debug.log*
 
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
 # OS / Temporary Files
 .DS_Store
 Thumbs.db

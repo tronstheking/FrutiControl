@@ -1,0 +1,18 @@
+{
+  "name": "FrutiControl VE - POS & Gestión Frutícola",
+  "short_name": "FrutiControl",
+  "description": "Sistema POS, Inventario y Gestión Frutícola con Conversión BCV en Tiempo Real",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/lemon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
