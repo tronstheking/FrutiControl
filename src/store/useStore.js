@@ -113,16 +113,8 @@ export const useStore = create((set, get) => {
           unsubscribeCloud = onSnapshot(userDocRef, (snap) => {
             if (snap.exists()) {
               const cloud = snap.data();
-              const currentInv = get().inventory;
-              const cloudInventory = (Array.isArray(cloud.inventory) && cloud.inventory.length > 0)
-                ? cloud.inventory
-                : (currentInv && currentInv.length > 0 ? currentInv : defaultData.inventory);
-
-              const currentSup = get().suppliers;
-              const cloudSuppliers = (Array.isArray(cloud.suppliers) && cloud.suppliers.length > 0)
-                ? cloud.suppliers
-                : (currentSup && currentSup.length > 0 ? currentSup : defaultData.suppliers);
-
+              const cloudInventory = Array.isArray(cloud.inventory) ? cloud.inventory : get().inventory;
+              const cloudSuppliers = Array.isArray(cloud.suppliers) ? cloud.suppliers : get().suppliers;
               const cloudReceivables = Array.isArray(cloud.receivables) ? cloud.receivables : get().receivables;
               const cloudPayables = Array.isArray(cloud.payables) ? cloud.payables : get().payables;
               const cloudTransactions = Array.isArray(cloud.transactions) ? cloud.transactions : get().transactions;
