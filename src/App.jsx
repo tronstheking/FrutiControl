@@ -53,7 +53,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
+      <div className="flex min-h-screen bg-[#f4f7f4] text-slate-800 font-sans selection:bg-emerald-500 selection:text-white">
         {/* Auth Overlay */}
         <LoginOverlay />
 
