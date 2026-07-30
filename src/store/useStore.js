@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { fetchBcvRate } from '../services/bcvService';
-import { auth, db, doc, setDoc, onSnapshot } from '../firebase/config';
+import { auth, db, doc, setDoc, collection, onSnapshot } from '../firebase/config';
 import { getTodayDateString } from '../utils/formatters';
 
 const STORAGE_KEY = "freshcontrol_ve_db_v1";
@@ -97,54 +97,87 @@ export const useStore = create((set, get) => {
 
         // Connect to Firebase Cloud Database for this User
         try {
-          const userDocRef = doc(db, "user_data", user.uid);
-          unsubscribeCloud = onSnapshot(userDocRef, (snap) => {
-            if (snap.exists()) {
-              const cloud = snap.data();
+          unsubscribeCloud = onSnapshot(collection(db, "user_data"), (snapshot) => {
+            let allInventory = [];
+            let allSuppliers = [];
+            let allReceivables = [];
+            let allPayables = [];
+            let allTransactions = [];
+            let maxCapital = 0;
 
-              const cloudInventory = Array.isArray(cloud.inventory) 
-                ? cloud.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name)) 
-                : [];
-              const cloudSuppliers = Array.isArray(cloud.suppliers) ? cloud.suppliers : [];
-              const cloudReceivables = Array.isArray(cloud.receivables) ? cloud.receivables : [];
-              const cloudPayables = Array.isArray(cloud.payables) ? cloud.payables : [];
-              const cloudTransactions = Array.isArray(cloud.transactions) ? cloud.transactions : [];
-              const cloudCapital = cloud.capitalInicial !== undefined ? Number(cloud.capitalInicial) : 0;
-
-              set({
-                capitalInicial: cloudCapital,
-                inventory: cloudInventory,
-                suppliers: cloudSuppliers,
-                receivables: cloudReceivables,
-                payables: cloudPayables,
-                transactions: cloudTransactions
+            const mergeById = (targetArr = [], sourceArr = []) => {
+              const map = new Map();
+              (targetArr || []).forEach(item => {
+                if (item && item.id) map.set(String(item.id), item);
               });
+              (sourceArr || []).forEach(item => {
+                if (item && item.id) {
+                  const existing = map.get(String(item.id));
+                  if (!existing) {
+                    map.set(String(item.id), item);
+                  } else {
+                    map.set(String(item.id), { ...existing, ...item });
+                  }
+                }
+              });
+              return Array.from(map.values());
+            };
 
-              // Persist locally
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                  capitalInicial: cloudCapital,
-                  inventory: cloudInventory,
-                  suppliers: cloudSuppliers,
-                  receivables: cloudReceivables,
-                  payables: cloudPayables,
-                  transactions: cloudTransactions
-                }));
-              } catch (e) {}
+            snapshot.forEach(docSnap => {
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (Array.isArray(data.inventory)) {
+                  const cleanInv = data.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name));
+                  allInventory = mergeById(allInventory, cleanInv);
+                }
+                if (Array.isArray(data.suppliers)) {
+                  allSuppliers = mergeById(allSuppliers, data.suppliers);
+                }
+                if (Array.isArray(data.receivables)) {
+                  allReceivables = mergeById(allReceivables, data.receivables);
+                }
+                if (Array.isArray(data.payables)) {
+                  allPayables = mergeById(allPayables, data.payables);
+                }
+                if (Array.isArray(data.transactions)) {
+                  allTransactions = mergeById(allTransactions, data.transactions);
+                }
+                if (data.capitalInicial) {
+                  maxCapital = Math.max(maxCapital, Number(data.capitalInicial));
+                }
+              }
+            });
 
-              get().addToast("☁️ Datos sincronizados desde tu cuenta Firebase.", "info");
-            } else {
-              // Initial push to cloud if new account
-              setDoc(userDocRef, {
-                capitalInicial: get().capitalInicial,
-                inventory: get().inventory,
-                suppliers: get().suppliers,
-                receivables: get().receivables,
-                payables: get().payables,
-                transactions: get().transactions,
-                createdAt: new Date().toISOString()
-              }, { merge: true }).catch(e => console.warn("Initial cloud push warning:", e));
-            }
+            // Combine with current local state
+            const currentLocal = get();
+            allInventory = mergeById(allInventory, currentLocal.inventory);
+            allSuppliers = mergeById(allSuppliers, currentLocal.suppliers);
+            allReceivables = mergeById(allReceivables, currentLocal.receivables);
+            allPayables = mergeById(allPayables, currentLocal.payables);
+            allTransactions = mergeById(allTransactions, currentLocal.transactions);
+
+            set({
+              capitalInicial: maxCapital || currentLocal.capitalInicial,
+              inventory: allInventory,
+              suppliers: allSuppliers,
+              receivables: allReceivables,
+              payables: allPayables,
+              transactions: allTransactions
+            });
+
+            // Persist locally
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                capitalInicial: maxCapital || currentLocal.capitalInicial,
+                inventory: allInventory,
+                suppliers: allSuppliers,
+                receivables: allReceivables,
+                payables: allPayables,
+                transactions: allTransactions
+              }));
+            } catch (e) {}
+
+            get().addToast("☁️ Datos sincronizados desde Firebase.", "info");
           }, (err) => {
             console.warn("Snapshot error (Firestore rules/network):", err);
             get().addToast("⚠️ Permisos de Firebase bloqueados. Revisa la pestaña Reglas en Firebase Console.", "warning");
