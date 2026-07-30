@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useStore } from '../store/useStore';
-import { formatUSD, formatBs } from '../utils/formatters';
+import { formatUSD, formatBs, getTodayDateString, isSameDate } from '../utils/formatters';
 import { TrendingUp, TrendingDown, Wallet, BookOpen, CreditCard, Archive, ShoppingCart, PlusCircle } from 'lucide-react';
 
 export const OverviewPage = React.memo(() => {
@@ -12,8 +12,8 @@ export const OverviewPage = React.memo(() => {
   const openModal = useStore(state => state.openModal);
 
   const { soldTodayUSD, salesTodayCount } = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayIncome = transactions.filter(t => t.date === todayStr && t.type === 'Ingreso');
+    const todayStr = getTodayDateString();
+    const todayIncome = transactions.filter(t => t.type === 'Ingreso' && (t.date === todayStr || isSameDate(t.date || t.id, todayStr)));
     return {
       soldTodayUSD: todayIncome.reduce((s, t) => s + Number(t.amount || 0), 0),
       salesTodayCount: todayIncome.length,

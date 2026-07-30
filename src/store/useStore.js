@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { fetchBcvRate } from '../services/bcvService';
 import { auth, db, doc, setDoc, onSnapshot } from '../firebase/config';
+import { getTodayDateString } from '../utils/formatters';
 
 const STORAGE_KEY = "freshcontrol_ve_db_v1";
 let unsubscribeCloud = null;
@@ -256,7 +257,7 @@ export const useStore = create((set, get) => {
         const totalCostUSD = (Number(fruitData.kg) || 0) * (Number(fruitData.costKg) || 0);
 
         if (logAsExpense && totalCostUSD > 0) {
-          const today = new Date().toISOString().split("T")[0];
+          const today = getTodayDateString();
           updatedTransactions = [
             ...state.transactions,
             {
@@ -308,7 +309,7 @@ export const useStore = create((set, get) => {
       const totalExpenseUSD = addedKg * costKg;
 
       if (logAsExpense && totalExpenseUSD > 0) {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getTodayDateString();
         updatedTransactions = [
           ...state.transactions,
           {
@@ -340,7 +341,7 @@ export const useStore = create((set, get) => {
       const lossUSD = wasteKg * costKg;
 
       if (logAsExpense && lossUSD > 0) {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getTodayDateString();
         updatedTransactions = [
           ...state.transactions,
           {
@@ -424,7 +425,7 @@ export const useStore = create((set, get) => {
       const newRemaining = Math.max(0, currentRemaining - paidVal);
       const isPaid = newRemaining === 0;
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayDateString();
       const abonoEntry = { 
         id: Date.now(),
         date: today, 
@@ -501,7 +502,7 @@ export const useStore = create((set, get) => {
       const item = state.payables.find(p => p.id === id);
       if (!item) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayDateString();
       const updatedPayables = state.payables.map(p => p.id === id ? { ...p, status: "Pagado" } : p);
 
       const updatedTransactions = [
@@ -557,7 +558,7 @@ export const useStore = create((set, get) => {
       if (cart.length === 0) return null;
 
       const totalUSD = cart.reduce((sum, item) => sum + (item.kg * item.priceKg), 0);
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayDateString();
 
       // 1. Subtract inventory kg
       const updatedInventory = state.inventory.map(fruit => {

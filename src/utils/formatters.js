@@ -21,6 +21,46 @@ export const getTodayDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
+export const isSameDate = (dateOrTimestamp, targetDateStr = getTodayDateString()) => {
+  if (!dateOrTimestamp) return false;
+  const str = String(dateOrTimestamp);
+  if (str === targetDateStr) return true;
+
+  if (formatDate(str) === formatDate(targetDateStr)) return true;
+
+  if (typeof dateOrTimestamp === 'number' || (typeof dateOrTimestamp === 'string' && /^\d{12,15}$/.test(dateOrTimestamp))) {
+    try {
+      const d = new Date(Number(dateOrTimestamp));
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const localStr = `${year}-${month}-${day}`;
+      if (localStr === targetDateStr) return true;
+    } catch (e) {}
+  }
+
+  return false;
+};
+
+export const isSameMonth = (dateOrTimestamp, monthKey) => {
+  if (!dateOrTimestamp || !monthKey) return false;
+  const str = String(dateOrTimestamp);
+  if (str.startsWith(monthKey)) return true;
+
+  if (typeof dateOrTimestamp === 'number' || (typeof dateOrTimestamp === 'string' && /^\d{12,15}$/.test(dateOrTimestamp))) {
+    try {
+      const d = new Date(Number(dateOrTimestamp));
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      if (`${year}-${month}` === monthKey) return true;
+    } catch (e) {}
+  }
+
+  return false;
+};
+
+
+
 export const formatDate = (dateInput) => {
   if (!dateInput) return "-";
   let str = String(dateInput);

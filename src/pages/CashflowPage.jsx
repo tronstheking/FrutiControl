@@ -7,7 +7,8 @@ import {
   getCurrentMonthKey, 
   getPreviousMonthKey, 
   formatMonthYear, 
-  MONTH_NAMES_ES 
+  MONTH_NAMES_ES,
+  isSameMonth
 } from '../utils/formatters';
 import { Search, TrendingUp, TrendingDown, Trash2, Calendar, PlusCircle, XCircle } from 'lucide-react';
 
@@ -31,6 +32,13 @@ export const CashflowPage = React.memo(() => {
     transactions.forEach(t => {
       if (t.date && typeof t.date === 'string' && t.date.length >= 7) {
         monthsSet.add(t.date.substring(0, 7));
+      } else if (t.id) {
+        try {
+          const d = new Date(Number(t.id));
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          if (!isNaN(d.getTime())) monthsSet.add(`${year}-${month}`);
+        } catch (e) {}
       }
     });
     return Array.from(monthsSet).sort().reverse(); // Newest first
@@ -42,11 +50,11 @@ export const CashflowPage = React.memo(() => {
 
     // 1. Period / Month Filter
     if (periodFilter === 'este_mes') {
-      list = list.filter(t => (t.date || '').startsWith(currentMonthKey));
+      list = list.filter(t => isSameMonth(t.date || t.id, currentMonthKey));
     } else if (periodFilter === 'mes_pasado') {
-      list = list.filter(t => (t.date || '').startsWith(previousMonthKey));
+      list = list.filter(t => isSameMonth(t.date || t.id, previousMonthKey));
     } else if (periodFilter === 'custom' && selectedMonthKey) {
-      list = list.filter(t => (t.date || '').startsWith(selectedMonthKey));
+      list = list.filter(t => isSameMonth(t.date || t.id, selectedMonthKey));
     }
 
     // 2. Type Filter (Ingreso / Egreso)
