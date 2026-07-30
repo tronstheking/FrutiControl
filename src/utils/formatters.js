@@ -38,6 +38,39 @@ export const formatDate = (dateInput) => {
   return `${day}/${month}/${year}`;
 };
 
+export const MONTH_NAMES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+export const getCurrentMonthKey = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+};
+
+export const getPreviousMonthKey = () => {
+  const d = new Date();
+  let year = d.getFullYear();
+  let month = d.getMonth(); // 0-based: if 0 (Jan), prev month is 12 (Dec) of year - 1
+  if (month === 0) {
+    month = 12;
+    year -= 1;
+  }
+  return `${year}-${String(month).padStart(2, '0')}`;
+};
+
+export const formatMonthYear = (monthKey) => {
+  if (!monthKey || !monthKey.includes('-')) return monthKey || '';
+  const [yearStr, monthStr] = monthKey.split('-');
+  const monthIdx = parseInt(monthStr, 10) - 1;
+  if (monthIdx >= 0 && monthIdx < 12) {
+    return `${MONTH_NAMES_ES[monthIdx]} ${yearStr}`;
+  }
+  return monthKey;
+};
+
 export const getFruitEmoji = (name = "") => {
   const n = name.toLowerCase();
   // Containers / Envases / Tobos / Cajas / Empaques / Botellas / Vasos / Potes
@@ -65,3 +98,4 @@ export const getFruitEmoji = (name = "") => {
   if (n.includes("guayaba")) return "🍎";
   return "🍎";
 };
+
