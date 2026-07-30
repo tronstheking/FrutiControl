@@ -147,6 +147,7 @@ export const useStore = create((set, get) => {
             }
           }, (err) => {
             console.warn("Snapshot error (Firestore rules/network):", err);
+            get().addToast("⚠️ Permisos de Firebase bloqueados. Revisa la pestaña Reglas en Firebase Console.", "warning");
           });
         } catch (e) {
           console.warn("Error subscripting to cloud database:", e);
