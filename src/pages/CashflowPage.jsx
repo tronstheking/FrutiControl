@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { 
   formatUSD, 
@@ -10,7 +10,7 @@ import {
   MONTH_NAMES_ES,
   isSameMonth
 } from '../utils/formatters';
-import { Search, TrendingUp, TrendingDown, Trash2, Calendar, PlusCircle, XCircle } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Trash2, Calendar, PlusCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const CashflowPage = React.memo(() => {
   const transactions = useStore(state => state.transactions);
@@ -22,9 +22,16 @@ export const CashflowPage = React.memo(() => {
   const [typeFilter, setTypeFilter] = useState('Todos');
   const [periodFilter, setPeriodFilter] = useState('este_mes'); // 'este_mes' | 'mes_pasado' | 'custom' | 'todos'
   const [selectedMonthKey, setSelectedMonthKey] = useState(getCurrentMonthKey());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50); // 50 items per page by default
 
   const currentMonthKey = getCurrentMonthKey();
   const previousMonthKey = getPreviousMonthKey();
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, periodFilter, typeFilter, selectedMonthKey, pageSize]);
 
   // Extract all unique available months (YYYY-MM) from history, ensuring current & previous month exist
   const availableMonths = useMemo(() => {
@@ -95,6 +102,16 @@ export const CashflowPage = React.memo(() => {
 
     return list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [transactions, periodFilter, selectedMonthKey, typeFilter, search, currentMonthKey, previousMonthKey]);
+
+  // Calculate total pages & paginated items
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / (pageSize === 'todos' ? (filteredTransactions.length || 1) : pageSize)));
+  const currentPageClamped = Math.min(currentPage, totalPages);
+
+  const paginatedTransactions = useMemo(() => {
+    if (pageSize === 'todos') return filteredTransactions;
+    const start = (currentPageClamped - 1) * pageSize;
+    return filteredTransactions.slice(start, start + pageSize);
+  }, [filteredTransactions, currentPageClamped, pageSize]);
 
   // Calculate totals dynamically for the filtered view
   const totals = useMemo(() => {
@@ -262,22 +279,49 @@ export const CashflowPage = React.memo(() => {
         )}
       </div>
 
-      {/* Results Count & Reset helper */}
-      <div className="flex items-center justify-between text-xs font-medium text-gray-500 px-1">
-        <span>Mostrando {filteredTransactions.length} movimiento(s)</span>
-        {(search || periodFilter !== 'este_mes' || typeFilter !== 'Todos') && (
-          <button
-            onClick={() => {
-              setSearch('');
-              setTypeFilter('Todos');
-              setPeriodFilter('este_mes');
-            }}
-            className="text-emerald-600 hover:underline font-bold text-[11px]"
+      {/* Results Count & Pagination Controls Bar */}
+      <div className="flex items-center justify-between text-xs font-medium text-gray-500 px-1 gap-2 flex-wrap">
+        <span>
+          Mostrando {paginatedTransactions.length} de {filteredTransactions.length} movimiento(s)
+        </span>
+
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] font-bold text-gray-400">Ver:</label>
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(e.target.value === 'todos' ? 'todos' : Number(e.target.value))}
+            className="bg-white border border-gray-200 text-xs font-bold text-gray-700 rounded-lg px-2 py-1 focus:outline-none"
           >
-            Restablecer filtros
-          </button>
-        )}
+            <option value={20}>20 / pág</option>
+            <option value={50}>50 / pág</option>
+            <option value={100}>100 / pág</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
       </div>
+
+      {/* Pagination Nav Buttons */}
+      {pageSize !== 'todos' && totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2.5">
+          <button
+            disabled={currentPageClamped <= 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" /> Anterior
+          </button>
+          <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-xl">
+            Página {currentPageClamped} de {totalPages}
+          </span>
+          <button
+            disabled={currentPageClamped >= totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            Siguiente <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Historical Transactions List */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
@@ -300,7 +344,7 @@ export const CashflowPage = React.memo(() => {
             </button>
           </div>
         ) : (
-          filteredTransactions.map((t, idx) => {
+          paginatedTransactions.map((t, idx) => {
             const isIncome = t.type === 'Ingreso';
             const formattedDateStr = formatDate(t.date);
 
@@ -308,7 +352,7 @@ export const CashflowPage = React.memo(() => {
               <div 
                 key={t.id || idx} 
                 className={`list-row gap-3 hover:bg-gray-50/80 transition-colors ${
-                  idx !== filteredTransactions.length - 1 ? 'border-b border-gray-100' : ''
+                  idx !== paginatedTransactions.length - 1 ? 'border-b border-gray-100' : ''
                 }`}
               >
                 <div className={`icon-badge shrink-0 ${isIncome ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
@@ -352,6 +396,29 @@ export const CashflowPage = React.memo(() => {
           })
         )}
       </div>
+
+      {/* Bottom Pagination Nav Buttons for long pages */}
+      {pageSize !== 'todos' && totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-2xl p-2.5 mt-3">
+          <button
+            disabled={currentPageClamped <= 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" /> Anterior
+          </button>
+          <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-xl">
+            Página {currentPageClamped} de {totalPages}
+          </span>
+          <button
+            disabled={currentPageClamped >= totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            Siguiente <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 });
