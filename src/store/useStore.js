@@ -8,19 +8,8 @@ let unsubscribeCloud = null;
 
 const defaultData = {
   capitalInicial: 0,
-  inventory: [
-    { id: 101, name: "Manzana Gala", kg: 45, priceKg: 2.50, costKg: 1.50, image: null, supplier: "Frutícola Los Andes" },
-    { id: 102, name: "Naranja Val.", kg: 12, priceKg: 1.20, costKg: 0.70, image: null, supplier: "Comercializadora Barquisimeto" },
-    { id: 103, name: "Cambur Banano", kg: 80, priceKg: 0.80, costKg: 0.45, image: null, supplier: "Mayorista Mercado de Coche" },
-    { id: 104, name: "Mango Tommy", kg: 3, priceKg: 1.50, costKg: 0.90, image: null, supplier: "Mayorista Mercado de Coche" },
-    { id: 105, name: "Lechoza", kg: 15, priceKg: 0.95, costKg: 0.55, image: null, supplier: "Distribuidora La Guaira" },
-    { id: 106, name: "Aguacate Hass", kg: 25, priceKg: 3.00, costKg: 1.80, image: null, supplier: "Frutícola Los Andes" }
-  ],
-  suppliers: [
-    { id: 1, name: "Frutícola Los Andes", fruit: "Fresas, Parchitas, Aguacate", phone: "+58 412 5550199", location: "Mérida / Colonia Tovar" },
-    { id: 2, name: "Mayorista Mercado de Coche", fruit: "Cambur, Mangos, Cítricos", phone: "+58 414 1112233", location: "Caracas" },
-    { id: 3, name: "Comercializadora Barquisimeto", fruit: "Patilla, Melón, Piña", phone: "+58 424 9998877", location: "Lara" }
-  ],
+  inventory: [],
+  suppliers: [],
   receivables: [],
   payables: [],
   transactions: []
@@ -31,19 +20,15 @@ const loadInitialState = () => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      const cleanInventory = Array.isArray(parsed.inventory) && parsed.inventory.length > 0
-        ? parsed.inventory.map(item => {
-            if (item.image && (item.image.startsWith('/fruits/') || item.image.includes('unsplash'))) {
-              return { ...item, image: null };
-            }
-            return item;
-          })
-        : defaultData.inventory;
+      const mockNames = ['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'];
+      const cleanInventory = Array.isArray(parsed.inventory)
+        ? parsed.inventory.filter(item => item && item.name && !mockNames.includes(item.name))
+        : [];
 
       return {
         capitalInicial: Number(parsed.capitalInicial) || 0,
         inventory: cleanInventory,
-        suppliers: Array.isArray(parsed.suppliers) && parsed.suppliers.length > 0 ? parsed.suppliers : defaultData.suppliers,
+        suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : [],
         receivables: Array.isArray(parsed.receivables) ? parsed.receivables : [],
         payables: Array.isArray(parsed.payables) ? parsed.payables : [],
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
@@ -88,6 +73,8 @@ export const useStore = create((set, get) => {
   };
 
   return {
+    ...initial,
+
     // Auth & User State
     user: (() => {
       try {
@@ -114,32 +101,15 @@ export const useStore = create((set, get) => {
           unsubscribeCloud = onSnapshot(userDocRef, (snap) => {
             if (snap.exists()) {
               const cloud = snap.data();
-              const currentLocal = get();
 
-              const mergeById = (cloudArr = [], localArr = []) => {
-                const map = new Map();
-                (localArr || []).forEach(item => {
-                  if (item && item.id) map.set(String(item.id), item);
-                });
-                (cloudArr || []).forEach(item => {
-                  if (item && item.id) {
-                    const existing = map.get(String(item.id));
-                    if (!existing) {
-                      map.set(String(item.id), item);
-                    } else {
-                      map.set(String(item.id), { ...existing, ...item });
-                    }
-                  }
-                });
-                return Array.from(map.values());
-              };
-
-              const cloudInventory = Array.isArray(cloud.inventory) ? mergeById(cloud.inventory, currentLocal.inventory) : currentLocal.inventory;
-              const cloudSuppliers = Array.isArray(cloud.suppliers) ? mergeById(cloud.suppliers, currentLocal.suppliers) : currentLocal.suppliers;
-              const cloudReceivables = Array.isArray(cloud.receivables) ? mergeById(cloud.receivables, currentLocal.receivables) : currentLocal.receivables;
-              const cloudPayables = Array.isArray(cloud.payables) ? mergeById(cloud.payables, currentLocal.payables) : currentLocal.payables;
-              const cloudTransactions = Array.isArray(cloud.transactions) ? mergeById(cloud.transactions, currentLocal.transactions) : currentLocal.transactions;
-              const cloudCapital = cloud.capitalInicial !== undefined ? Number(cloud.capitalInicial) : currentLocal.capitalInicial;
+              const cloudInventory = Array.isArray(cloud.inventory) 
+                ? cloud.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name)) 
+                : [];
+              const cloudSuppliers = Array.isArray(cloud.suppliers) ? cloud.suppliers : [];
+              const cloudReceivables = Array.isArray(cloud.receivables) ? cloud.receivables : [];
+              const cloudPayables = Array.isArray(cloud.payables) ? cloud.payables : [];
+              const cloudTransactions = Array.isArray(cloud.transactions) ? cloud.transactions : [];
+              const cloudCapital = cloud.capitalInicial !== undefined ? Number(cloud.capitalInicial) : 0;
 
               set({
                 capitalInicial: cloudCapital,
