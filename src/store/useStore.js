@@ -114,12 +114,32 @@ export const useStore = create((set, get) => {
           unsubscribeCloud = onSnapshot(userDocRef, (snap) => {
             if (snap.exists()) {
               const cloud = snap.data();
-              const cloudInventory = Array.isArray(cloud.inventory) ? cloud.inventory : get().inventory;
-              const cloudSuppliers = Array.isArray(cloud.suppliers) ? cloud.suppliers : get().suppliers;
-              const cloudReceivables = Array.isArray(cloud.receivables) ? cloud.receivables : get().receivables;
-              const cloudPayables = Array.isArray(cloud.payables) ? cloud.payables : get().payables;
-              const cloudTransactions = Array.isArray(cloud.transactions) ? cloud.transactions : get().transactions;
-              const cloudCapital = cloud.capitalInicial !== undefined ? Number(cloud.capitalInicial) : get().capitalInicial;
+              const currentLocal = get();
+
+              const mergeById = (cloudArr = [], localArr = []) => {
+                const map = new Map();
+                (localArr || []).forEach(item => {
+                  if (item && item.id) map.set(String(item.id), item);
+                });
+                (cloudArr || []).forEach(item => {
+                  if (item && item.id) {
+                    const existing = map.get(String(item.id));
+                    if (!existing) {
+                      map.set(String(item.id), item);
+                    } else {
+                      map.set(String(item.id), { ...existing, ...item });
+                    }
+                  }
+                });
+                return Array.from(map.values());
+              };
+
+              const cloudInventory = Array.isArray(cloud.inventory) ? mergeById(cloud.inventory, currentLocal.inventory) : currentLocal.inventory;
+              const cloudSuppliers = Array.isArray(cloud.suppliers) ? mergeById(cloud.suppliers, currentLocal.suppliers) : currentLocal.suppliers;
+              const cloudReceivables = Array.isArray(cloud.receivables) ? mergeById(cloud.receivables, currentLocal.receivables) : currentLocal.receivables;
+              const cloudPayables = Array.isArray(cloud.payables) ? mergeById(cloud.payables, currentLocal.payables) : currentLocal.payables;
+              const cloudTransactions = Array.isArray(cloud.transactions) ? mergeById(cloud.transactions, currentLocal.transactions) : currentLocal.transactions;
+              const cloudCapital = cloud.capitalInicial !== undefined ? Number(cloud.capitalInicial) : currentLocal.capitalInicial;
 
               set({
                 capitalInicial: cloudCapital,

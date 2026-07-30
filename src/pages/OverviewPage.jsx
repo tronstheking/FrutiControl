@@ -11,14 +11,20 @@ export const OverviewPage = React.memo(() => {
   const bcvRate = useStore(state => state.bcvRate);
   const openModal = useStore(state => state.openModal);
 
-  const { soldTodayUSD, salesTodayCount } = useMemo(() => {
+  const { soldTodayUSD, salesTodayCount, todayReceivablesUSD } = useMemo(() => {
     const todayStr = getTodayDateString();
     const todayIncome = transactions.filter(t => t.type === 'Ingreso' && (t.date === todayStr || isSameDate(t.date || t.id, todayStr)));
+    const todayRec = receivables.filter(r => isSameDate(r.dueDate || r.id, todayStr));
+    const recUSD = todayRec.reduce((s, r) => s + Number(r.amount || 0), 0);
+
     return {
       soldTodayUSD: todayIncome.reduce((s, t) => s + Number(t.amount || 0), 0),
-      salesTodayCount: todayIncome.length,
+      salesTodayCount: todayIncome.length + todayRec.length,
+      todayReceivablesUSD: recUSD
     };
-  }, [transactions]);
+  }, [transactions, receivables]);
+
+  const totalSalesAndCreditToday = soldTodayUSD + todayReceivablesUSD;
 
   const { totalIncomeUSD, totalExpenseUSD, netBalanceUSD } = useMemo(() => {
     const income = transactions.filter(t => t.type === 'Ingreso').reduce((s, t) => s + Number(t.amount || 0), 0);
@@ -52,10 +58,15 @@ export const OverviewPage = React.memo(() => {
       {/* Today's Hero Card */}
       <div className="bg-emerald-600 rounded-2xl p-5 text-white">
         <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wider">Vendido Hoy</p>
-        <p className="text-4xl font-black mt-1 leading-none">{formatUSD(soldTodayUSD)}</p>
-        <p className="text-emerald-200 text-sm font-medium mt-1">{formatBs(soldTodayUSD, bcvRate)}</p>
+        <p className="text-4xl font-black mt-1 leading-none">{formatUSD(totalSalesAndCreditToday)}</p>
+        <p className="text-emerald-200 text-sm font-medium mt-1">{formatBs(totalSalesAndCreditToday, bcvRate)}</p>
+        {todayReceivablesUSD > 0 && (
+          <p className="text-[11px] font-bold text-amber-200 mt-1.5 bg-black/15 px-2.5 py-1 rounded-lg inline-block">
+            🤝 Incluye {formatUSD(todayReceivablesUSD)} en fiados anotados hoy
+          </p>
+        )}
         <div className="flex items-center justify-between mt-4">
-          <span className="text-emerald-100 text-xs font-semibold">{salesTodayCount} ventas registradas hoy</span>
+          <span className="text-emerald-100 text-xs font-semibold">{salesTodayCount} operaciones registradas hoy</span>
           <button
             onClick={() => openModal('pos')}
             className="flex items-center gap-1.5 bg-white/20 active:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
