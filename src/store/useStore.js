@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { fetchBcvRate } from '../services/bcvService';
-import { auth, db, doc, setDoc, collection, onSnapshot } from '../firebase/config';
+import { auth, db, doc, setDoc, collection, onSnapshot, getDocs } from '../firebase/config';
 import { getTodayDateString } from '../utils/formatters';
 
 const STORAGE_KEY = "freshcontrol_ve_db_v1";
+const SHARED_DOC_ID = "main_store";
 let unsubscribeCloud = null;
+let hasConsolidatedLegacyDocs = false;
 
 const defaultData = {
   capitalInicial: 0,
@@ -13,6 +15,21 @@ const defaultData = {
   receivables: [],
   payables: [],
   transactions: []
+};
+
+const mergeItemsById = (targetArr = [], sourceArr = []) => {
+  const map = new Map();
+  (targetArr || []).forEach(item => {
+    if (item && item.id !== undefined) map.set(String(item.id), item);
+  });
+  (sourceArr || []).forEach(item => {
+    if (item && item.id !== undefined) {
+      if (!map.has(String(item.id))) {
+        map.set(String(item.id), item);
+      }
+    }
+  });
+  return Array.from(map.values());
 };
 
 const loadInitialState = () => {
@@ -54,18 +71,22 @@ export const useStore = create((set, get) => {
         transactions: newState.transactions
       }));
 
-      // Firebase Firestore cloud backup
+      // Firebase Firestore cloud backup to SHARED main_store document
+      const payload = {
+        capitalInicial: newState.capitalInicial,
+        inventory: newState.inventory,
+        suppliers: newState.suppliers,
+        receivables: newState.receivables,
+        payables: newState.payables,
+        transactions: newState.transactions,
+        updatedAt: new Date().toISOString()
+      };
+
+      setDoc(doc(db, "user_data", SHARED_DOC_ID), payload).catch(err => console.warn("Firestore main_store sync warning:", err));
+
       const currentUser = get()?.user || auth.currentUser;
-      if (currentUser && currentUser.uid) {
-        setDoc(doc(db, "user_data", currentUser.uid), {
-          capitalInicial: newState.capitalInicial,
-          inventory: newState.inventory,
-          suppliers: newState.suppliers,
-          receivables: newState.receivables,
-          payables: newState.payables,
-          transactions: newState.transactions,
-          updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(err => console.warn("Firestore sync warning:", err));
+      if (currentUser && currentUser.uid && currentUser.uid !== SHARED_DOC_ID) {
+        setDoc(doc(db, "user_data", currentUser.uid), payload).catch(err => console.warn("Firestore user sync warning:", err));
       }
     } catch (e) {
       console.error("Save error:", e);
@@ -84,6 +105,7 @@ export const useStore = create((set, get) => {
         return null;
       }
     })(),
+
     setUser: (user) => {
       if (unsubscribeCloud) {
         unsubscribeCloud();
@@ -95,22 +117,80 @@ export const useStore = create((set, get) => {
         try { localStorage.setItem('fruticontrol_user_session', JSON.stringify(userData)); } catch (e) {}
         set({ user: userData });
 
-        // Connect to Firebase Cloud Database for this User document
+        // Connect to Firebase Cloud Database on the central main_store document
         try {
-          const userDocRef = doc(db, "user_data", user.uid);
-          unsubscribeCloud = onSnapshot(userDocRef, (docSnap) => {
+          const mainDocRef = doc(db, "user_data", SHARED_DOC_ID);
+
+          unsubscribeCloud = onSnapshot(mainDocRef, async (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data();
               const cleanInv = Array.isArray(data.inventory)
                 ? data.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name))
                 : [];
 
-              const cloudCapital = Number(data.capitalInicial) || 0;
-              const cloudInventory = cleanInv;
-              const cloudSuppliers = Array.isArray(data.suppliers) ? data.suppliers : [];
-              const cloudReceivables = Array.isArray(data.receivables) ? data.receivables : [];
-              const cloudPayables = Array.isArray(data.payables) ? data.payables : [];
-              const cloudTransactions = Array.isArray(data.transactions) ? data.transactions : [];
+              let cloudCapital = Number(data.capitalInicial) || 0;
+              let cloudInventory = cleanInv;
+              let cloudSuppliers = Array.isArray(data.suppliers) ? data.suppliers : [];
+              let cloudReceivables = Array.isArray(data.receivables) ? data.receivables : [];
+              let cloudPayables = Array.isArray(data.payables) ? data.payables : [];
+              let cloudTransactions = Array.isArray(data.transactions) ? data.transactions : [];
+
+              // One-time consolidation of existing legacy documents (e.g. H437bymFaAcZQwdfwNUXto3E2PI2) into main_store
+              if (!hasConsolidatedLegacyDocs) {
+                hasConsolidatedLegacyDocs = true;
+                try {
+                  const querySnap = await getDocs(collection(db, "user_data"));
+                  let needsUpdate = false;
+                  querySnap.forEach(d => {
+                    if (d.id !== SHARED_DOC_ID) {
+                      const legacyData = d.data();
+                      if (Array.isArray(legacyData.inventory)) {
+                        const beforeCount = cloudInventory.length;
+                        const legacyClean = legacyData.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name));
+                        cloudInventory = mergeItemsById(cloudInventory, legacyClean);
+                        if (cloudInventory.length > beforeCount) needsUpdate = true;
+                      }
+                      if (Array.isArray(legacyData.suppliers)) {
+                        const before = cloudSuppliers.length;
+                        cloudSuppliers = mergeItemsById(cloudSuppliers, legacyData.suppliers);
+                        if (cloudSuppliers.length > before) needsUpdate = true;
+                      }
+                      if (Array.isArray(legacyData.receivables)) {
+                        const before = cloudReceivables.length;
+                        cloudReceivables = mergeItemsById(cloudReceivables, legacyData.receivables);
+                        if (cloudReceivables.length > before) needsUpdate = true;
+                      }
+                      if (Array.isArray(legacyData.payables)) {
+                        const before = cloudPayables.length;
+                        cloudPayables = mergeItemsById(cloudPayables, legacyData.payables);
+                        if (cloudPayables.length > before) needsUpdate = true;
+                      }
+                      if (Array.isArray(legacyData.transactions)) {
+                        const before = cloudTransactions.length;
+                        cloudTransactions = mergeItemsById(cloudTransactions, legacyData.transactions);
+                        if (cloudTransactions.length > before) needsUpdate = true;
+                      }
+                      if (legacyData.capitalInicial) {
+                        cloudCapital = Math.max(cloudCapital, Number(legacyData.capitalInicial));
+                      }
+                    }
+                  });
+
+                  if (needsUpdate) {
+                    await setDoc(mainDocRef, {
+                      capitalInicial: cloudCapital,
+                      inventory: cloudInventory,
+                      suppliers: cloudSuppliers,
+                      receivables: cloudReceivables,
+                      payables: cloudPayables,
+                      transactions: cloudTransactions,
+                      updatedAt: new Date().toISOString()
+                    });
+                  }
+                } catch (err) {
+                  console.warn("Legacy docs consolidation note:", err);
+                }
+              }
 
               set({
                 capitalInicial: cloudCapital,
@@ -135,21 +215,51 @@ export const useStore = create((set, get) => {
 
               get().addToast("☁️ Datos sincronizados con la nube.", "info");
             } else {
-              // Seed initial cloud document with current local state
-              const currentLocal = get();
-              setDoc(userDocRef, {
-                capitalInicial: currentLocal.capitalInicial,
-                inventory: currentLocal.inventory,
-                suppliers: currentLocal.suppliers,
-                receivables: currentLocal.receivables,
-                payables: currentLocal.payables,
-                transactions: currentLocal.transactions,
-                updatedAt: new Date().toISOString()
-              }).catch(err => console.warn("Initial Firestore seed warning:", err));
+              // Document main_store does not exist yet -> Consolidate all legacy UID documents & local state into main_store
+              try {
+                const querySnap = await getDocs(collection(db, "user_data"));
+                let initInventory = [];
+                let initSuppliers = [];
+                let initReceivables = [];
+                let initPayables = [];
+                let initTransactions = [];
+                let maxCap = get().capitalInicial || 0;
+
+                querySnap.forEach(d => {
+                  const dData = d.data();
+                  if (Array.isArray(dData.inventory)) initInventory = mergeItemsById(initInventory, dData.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name)));
+                  if (Array.isArray(dData.suppliers)) initSuppliers = mergeItemsById(initSuppliers, dData.suppliers);
+                  if (Array.isArray(dData.receivables)) initReceivables = mergeItemsById(initReceivables, dData.receivables);
+                  if (Array.isArray(dData.payables)) initPayables = mergeItemsById(initPayables, dData.payables);
+                  if (Array.isArray(dData.transactions)) initTransactions = mergeItemsById(initTransactions, dData.transactions);
+                  if (dData.capitalInicial) maxCap = Math.max(maxCap, Number(dData.capitalInicial));
+                });
+
+                const currentLocal = get();
+                initInventory = mergeItemsById(initInventory, currentLocal.inventory);
+                initSuppliers = mergeItemsById(initSuppliers, currentLocal.suppliers);
+                initReceivables = mergeItemsById(initReceivables, currentLocal.receivables);
+                initPayables = mergeItemsById(initPayables, currentLocal.payables);
+                initTransactions = mergeItemsById(initTransactions, currentLocal.transactions);
+
+                const seededData = {
+                  capitalInicial: maxCap || currentLocal.capitalInicial,
+                  inventory: initInventory,
+                  suppliers: initSuppliers,
+                  receivables: initReceivables,
+                  payables: initPayables,
+                  transactions: initTransactions,
+                  updatedAt: new Date().toISOString()
+                };
+
+                await setDoc(mainDocRef, seededData);
+              } catch (err) {
+                console.warn("Initial Firestore seed warning:", err);
+              }
             }
           }, (err) => {
             console.warn("Snapshot error (Firestore rules/network):", err);
-            get().addToast("⚠️ Permisos de Firebase bloqueados. Revisa la pestaña Reglas en Firebase Console.", "warning");
+            get().addToast("⚠️ Permisos de Firebase bloqueados.", "warning");
           });
         } catch (e) {
           console.warn("Error subscripting to cloud database:", e);
