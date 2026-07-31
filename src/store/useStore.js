@@ -95,89 +95,58 @@ export const useStore = create((set, get) => {
         try { localStorage.setItem('fruticontrol_user_session', JSON.stringify(userData)); } catch (e) {}
         set({ user: userData });
 
-        // Connect to Firebase Cloud Database for this User
+        // Connect to Firebase Cloud Database for this User document
         try {
-          unsubscribeCloud = onSnapshot(collection(db, "user_data"), (snapshot) => {
-            let allInventory = [];
-            let allSuppliers = [];
-            let allReceivables = [];
-            let allPayables = [];
-            let allTransactions = [];
-            let maxCapital = 0;
+          const userDocRef = doc(db, "user_data", user.uid);
+          unsubscribeCloud = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const cleanInv = Array.isArray(data.inventory)
+                ? data.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name))
+                : [];
 
-            const mergeById = (targetArr = [], sourceArr = []) => {
-              const map = new Map();
-              (targetArr || []).forEach(item => {
-                if (item && item.id) map.set(String(item.id), item);
+              const cloudCapital = Number(data.capitalInicial) || 0;
+              const cloudInventory = cleanInv;
+              const cloudSuppliers = Array.isArray(data.suppliers) ? data.suppliers : [];
+              const cloudReceivables = Array.isArray(data.receivables) ? data.receivables : [];
+              const cloudPayables = Array.isArray(data.payables) ? data.payables : [];
+              const cloudTransactions = Array.isArray(data.transactions) ? data.transactions : [];
+
+              set({
+                capitalInicial: cloudCapital,
+                inventory: cloudInventory,
+                suppliers: cloudSuppliers,
+                receivables: cloudReceivables,
+                payables: cloudPayables,
+                transactions: cloudTransactions
               });
-              (sourceArr || []).forEach(item => {
-                if (item && item.id) {
-                  const existing = map.get(String(item.id));
-                  if (!existing) {
-                    map.set(String(item.id), item);
-                  } else {
-                    map.set(String(item.id), { ...existing, ...item });
-                  }
-                }
-              });
-              return Array.from(map.values());
-            };
 
-            snapshot.forEach(docSnap => {
-              if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (Array.isArray(data.inventory)) {
-                  const cleanInv = data.inventory.filter(i => i && i.name && !['Manzana Gala', 'Naranja Val.', 'Cambur Banano', 'Mango Tommy', 'Lechoza', 'Aguacate Hass'].includes(i.name));
-                  allInventory = mergeById(allInventory, cleanInv);
-                }
-                if (Array.isArray(data.suppliers)) {
-                  allSuppliers = mergeById(allSuppliers, data.suppliers);
-                }
-                if (Array.isArray(data.receivables)) {
-                  allReceivables = mergeById(allReceivables, data.receivables);
-                }
-                if (Array.isArray(data.payables)) {
-                  allPayables = mergeById(allPayables, data.payables);
-                }
-                if (Array.isArray(data.transactions)) {
-                  allTransactions = mergeById(allTransactions, data.transactions);
-                }
-                if (data.capitalInicial) {
-                  maxCapital = Math.max(maxCapital, Number(data.capitalInicial));
-                }
-              }
-            });
+              // Persist locally
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                  capitalInicial: cloudCapital,
+                  inventory: cloudInventory,
+                  suppliers: cloudSuppliers,
+                  receivables: cloudReceivables,
+                  payables: cloudPayables,
+                  transactions: cloudTransactions
+                }));
+              } catch (e) {}
 
-            // Combine with current local state
-            const currentLocal = get();
-            allInventory = mergeById(allInventory, currentLocal.inventory);
-            allSuppliers = mergeById(allSuppliers, currentLocal.suppliers);
-            allReceivables = mergeById(allReceivables, currentLocal.receivables);
-            allPayables = mergeById(allPayables, currentLocal.payables);
-            allTransactions = mergeById(allTransactions, currentLocal.transactions);
-
-            set({
-              capitalInicial: maxCapital || currentLocal.capitalInicial,
-              inventory: allInventory,
-              suppliers: allSuppliers,
-              receivables: allReceivables,
-              payables: allPayables,
-              transactions: allTransactions
-            });
-
-            // Persist locally
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                capitalInicial: maxCapital || currentLocal.capitalInicial,
-                inventory: allInventory,
-                suppliers: allSuppliers,
-                receivables: allReceivables,
-                payables: allPayables,
-                transactions: allTransactions
-              }));
-            } catch (e) {}
-
-            get().addToast("☁️ Datos sincronizados desde Firebase.", "info");
+              get().addToast("☁️ Datos sincronizados con la nube.", "info");
+            } else {
+              // Seed initial cloud document with current local state
+              const currentLocal = get();
+              setDoc(userDocRef, {
+                capitalInicial: currentLocal.capitalInicial,
+                inventory: currentLocal.inventory,
+                suppliers: currentLocal.suppliers,
+                receivables: currentLocal.receivables,
+                payables: currentLocal.payables,
+                transactions: currentLocal.transactions,
+                updatedAt: new Date().toISOString()
+              }).catch(err => console.warn("Initial Firestore seed warning:", err));
+            }
           }, (err) => {
             console.warn("Snapshot error (Firestore rules/network):", err);
             get().addToast("⚠️ Permisos de Firebase bloqueados. Revisa la pestaña Reglas en Firebase Console.", "warning");
@@ -313,7 +282,7 @@ export const useStore = create((set, get) => {
 
     deleteFruit: (id) => {
       set(state => {
-        const updatedInventory = state.inventory.filter(f => f.id !== id);
+        const updatedInventory = state.inventory.filter(f => String(f.id) !== String(id));
         const newState = { ...state, inventory: updatedInventory };
         syncState(newState);
         return { inventory: updatedInventory };
@@ -323,11 +292,11 @@ export const useStore = create((set, get) => {
 
     restockFruit: (id, addedKg, costKg, logAsExpense) => {
       const state = get();
-      const fruit = state.inventory.find(f => f.id === id);
+      const fruit = state.inventory.find(f => String(f.id) === String(id));
       if (!fruit) return;
 
       const newKg = Number((Number(fruit.kg) + addedKg).toFixed(1));
-      const updatedInventory = state.inventory.map(f => f.id === id ? { ...f, kg: newKg, costKg } : f);
+      const updatedInventory = state.inventory.map(f => String(f.id) === String(id) ? { ...f, kg: newKg, costKg } : f);
       
       let updatedTransactions = state.transactions;
       const totalExpenseUSD = addedKg * costKg;
@@ -354,11 +323,11 @@ export const useStore = create((set, get) => {
 
     registerWaste: (fruitId, wasteKg, reason, logAsExpense) => {
       const state = get();
-      const fruit = state.inventory.find(f => f.id === fruitId);
+      const fruit = state.inventory.find(f => String(f.id) === String(fruitId));
       if (!fruit) return;
 
       const newKg = Math.max(0, Number((Number(fruit.kg) - wasteKg).toFixed(1)));
-      const updatedInventory = state.inventory.map(f => f.id === fruitId ? { ...f, kg: newKg } : f);
+      const updatedInventory = state.inventory.map(f => String(f.id) === String(fruitId) ? { ...f, kg: newKg } : f);
 
       let updatedTransactions = state.transactions;
       const costKg = Number(fruit.costKg) || (Number(fruit.priceKg) * 0.7);
@@ -389,7 +358,8 @@ export const useStore = create((set, get) => {
       set(state => {
         const newSupplier = { id: Date.now(), ...supplierData };
         const updated = [...state.suppliers, newSupplier];
-        syncState({ ...state, suppliers: updated });
+        const newState = { ...state, suppliers: updated };
+        syncState(newState);
         return { suppliers: updated };
       });
       get().addToast("Proveedor registrado.", "success");
@@ -397,8 +367,9 @@ export const useStore = create((set, get) => {
 
     editSupplier: (id, supplierData) => {
       set(state => {
-        const updated = state.suppliers.map(s => s.id === id ? { ...s, ...supplierData } : s);
-        syncState({ ...state, suppliers: updated });
+        const updated = state.suppliers.map(s => String(s.id) === String(id) ? { ...s, ...supplierData } : s);
+        const newState = { ...state, suppliers: updated };
+        syncState(newState);
         return { suppliers: updated };
       });
       get().addToast("Proveedor actualizado.", "info");
@@ -406,8 +377,9 @@ export const useStore = create((set, get) => {
 
     deleteSupplier: (id) => {
       set(state => {
-        const updated = state.suppliers.filter(s => s.id !== id);
-        syncState({ ...state, suppliers: updated });
+        const updated = state.suppliers.filter(s => String(s.id) !== String(id));
+        const newState = { ...state, suppliers: updated };
+        syncState(newState);
         return { suppliers: updated };
       });
       get().addToast("Proveedor eliminado.", "warning");
@@ -424,7 +396,8 @@ export const useStore = create((set, get) => {
           ...receivableData
         };
         const updated = [...state.receivables, newRec];
-        syncState({ ...state, receivables: updated });
+        const newState = { ...state, receivables: updated };
+        syncState(newState);
         return { receivables: updated };
       });
       get().addToast("🤝 Fiado registrado en el cuaderno.", "success");
@@ -432,8 +405,9 @@ export const useStore = create((set, get) => {
 
     editReceivable: (id, receivableData) => {
       set(state => {
-        const updated = state.receivables.map(r => r.id === id ? { ...r, ...receivableData } : r);
-        syncState({ ...state, receivables: updated });
+        const updated = state.receivables.map(r => String(r.id) === String(id) ? { ...r, ...receivableData } : r);
+        const newState = { ...state, receivables: updated };
+        syncState(newState);
         return { receivables: updated };
       });
       get().addToast("Fiado actualizado.", "info");
@@ -441,7 +415,7 @@ export const useStore = create((set, get) => {
 
     payReceivable: (id, paymentAmount, isFullPayment, paymentMethod = '📱 Pago Móvil') => {
       const state = get();
-      const rec = state.receivables.find(r => r.id === id);
+      const rec = state.receivables.find(r => String(r.id) === String(id));
       if (!rec) return;
 
       const currentRemaining = rec.remainingAmount !== undefined ? Number(rec.remainingAmount) : Number(rec.amount);
@@ -458,7 +432,7 @@ export const useStore = create((set, get) => {
       };
 
       const updatedReceivables = state.receivables.map(r => {
-        if (r.id === id) {
+        if (String(r.id) === String(id)) {
           return {
             ...r,
             remainingAmount: newRemaining,
@@ -490,8 +464,9 @@ export const useStore = create((set, get) => {
 
     deleteReceivable: (id) => {
       set(state => {
-        const updated = state.receivables.filter(r => r.id !== id);
-        syncState({ ...state, receivables: updated });
+        const updated = state.receivables.filter(r => String(r.id) !== String(id));
+        const newState = { ...state, receivables: updated };
+        syncState(newState);
         return { receivables: updated };
       });
       get().addToast("Fiado eliminado.", "warning");
@@ -506,7 +481,8 @@ export const useStore = create((set, get) => {
           ...payableData
         };
         const updated = [...state.payables, newPayable];
-        syncState({ ...state, payables: updated });
+        const newState = { ...state, payables: updated };
+        syncState(newState);
         return { payables: updated };
       });
       get().addToast("Deuda a proveedor registrada.", "success");
@@ -514,8 +490,9 @@ export const useStore = create((set, get) => {
 
     editPayable: (id, payableData) => {
       set(state => {
-        const updated = state.payables.map(p => p.id === id ? { ...p, ...payableData } : p);
-        syncState({ ...state, payables: updated });
+        const updated = state.payables.map(p => String(p.id) === String(id) ? { ...p, ...payableData } : p);
+        const newState = { ...state, payables: updated };
+        syncState(newState);
         return { payables: updated };
       });
       get().addToast("Cuenta por pagar actualizada.", "info");
@@ -523,11 +500,11 @@ export const useStore = create((set, get) => {
 
     markPayablePaid: (id) => {
       const state = get();
-      const item = state.payables.find(p => p.id === id);
+      const item = state.payables.find(p => String(p.id) === String(id));
       if (!item) return;
 
       const today = getTodayDateString();
-      const updatedPayables = state.payables.map(p => p.id === id ? { ...p, status: "Pagado" } : p);
+      const updatedPayables = state.payables.map(p => String(p.id) === String(id) ? { ...p, status: "Pagado" } : p);
 
       const updatedTransactions = [
         ...state.transactions,
@@ -548,8 +525,9 @@ export const useStore = create((set, get) => {
 
     deletePayable: (id) => {
       set(state => {
-        const updated = state.payables.filter(p => p.id !== id);
-        syncState({ ...state, payables: updated });
+        const updated = state.payables.filter(p => String(p.id) !== String(id));
+        const newState = { ...state, payables: updated };
+        syncState(newState);
         return { payables: updated };
       });
       get().addToast("Cuenta por pagar eliminada.", "warning");
@@ -560,7 +538,8 @@ export const useStore = create((set, get) => {
       set(state => {
         const newTrans = { id: Date.now(), ...transData };
         const updated = [newTrans, ...state.transactions];
-        syncState({ ...state, transactions: updated });
+        const newState = { ...state, transactions: updated };
+        syncState(newState);
         return { transactions: updated };
       });
       get().addToast(`Movimiento de ${transData.type} registrado.`, "success");
@@ -568,8 +547,9 @@ export const useStore = create((set, get) => {
 
     deleteTransaction: (id) => {
       set(state => {
-        const updated = state.transactions.filter(t => t.id !== id);
-        syncState({ ...state, transactions: updated });
+        const updated = state.transactions.filter(t => String(t.id) !== String(id));
+        const newState = { ...state, transactions: updated };
+        syncState(newState);
         return { transactions: updated };
       });
       get().addToast("Movimiento eliminado.", "warning");
